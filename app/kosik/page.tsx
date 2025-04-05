@@ -1,17 +1,63 @@
 'use client';
 
+import { useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2 } from 'lucide-react'; // Import Trash icon
+import { Trash2, Loader2, AlertTriangle } from 'lucide-react';
+import { loadStripe } from '@stripe/stripe-js';
+import { toast } from 'sonner';
+import { useSearchParams } from 'next/navigation';
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 export default function KosikPage() {
     const { cartItems, removeItem, updateQuantity, getTotalPrice, clearCart, isLoading } = useCart();
+    const [isCheckingOut, setIsCheckingOut] = useState(false);
+    const searchParams = useSearchParams();
+    const paymentCancelled = searchParams.get('status') === 'cancelled';
+
+    const handleCheckout = async () => {
+        setIsCheckingOut(true);
+        try {
+            const stripe = await stripePromise;
+            if (!stripe) {
+                throw new Error('Stripe.js has not loaded yet.');
+            }
+
+            const response = await fetch('/api/checkout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(cartItems),
+            });
+
+            const session = await response.json();
+
+            if (!response.ok) {
+                throw new Error(session.error || 'Nastala chyba pri vytváraní platby.');
+            }
+
+            const result = await stripe.redirectToCheckout({
+                sessionId: session.sessionId,
+            });
+
+            if (result.error) {
+                throw new Error(result.error.message || 'Nepodarilo sa presmerovať na platobnú bránu.');
+            }
+        } catch (error) {
+            console.error("Checkout error:", error);
+            const errorMessage = error instanceof Error ? error.message : 'Nastala chyba počas procesu platby.';
+            toast.error(errorMessage);
+        } finally {
+            setIsCheckingOut(false);
+        }
+    };
 
     if (isLoading) {
-        // Show loading indicator while cart is loading from localStorage
         return <div className="container mx-auto py-8 px-4 text-center">Načítava sa košík...</div>;
     }
 
@@ -30,6 +76,13 @@ export default function KosikPage() {
     return (
         <div className="container mx-auto py-8 px-4">
             <h1 className="text-3xl font-bold mb-6">Váš Nákupný Košík</h1>
+
+            {paymentCancelled && (
+                <div className="mb-6 flex items-center gap-3 rounded-lg border border-yellow-300 bg-yellow-50 p-4 text-yellow-800">
+                    <AlertTriangle className="h-5 w-5 flex-shrink-0" />
+                    <p>Vaša platba bola zrušená. Váš košík nebol vyprázdnený.</p>
+                </div>
+            )}
 
             <div className="border rounded-lg overflow-hidden mb-6">
                 {cartItems.map((item) => (
@@ -51,7 +104,7 @@ export default function KosikPage() {
                         </div>
 
                         <div className="flex items-center gap-3 flex-shrink-0">
-                             <label htmlFor={`quantity-${item.id}`} className="sr-only">Množstvo pre {item.name}</label>
+                            <label htmlFor={`quantity-${item.id}`} className="sr-only">Množstvo pre {item.name}</label>
                             <Input
                                 id={`quantity-${item.id}`}
                                 type="number"
@@ -69,7 +122,7 @@ export default function KosikPage() {
                                 <Trash2 className="h-4 w-4" />
                             </Button>
                         </div>
-                         <div className="text-right font-semibold w-full sm:w-auto sm:min-w-[80px]">
+                        <div className="text-right font-semibold w-full sm:w-auto sm:min-w-[80px]">
                             €{(item.price * item.quantity).toFixed(2)}
                         </div>
                     </div>
@@ -82,11 +135,19 @@ export default function KosikPage() {
                 </Button>
                 <div className="text-right w-full sm:w-auto">
                     <p className="text-xl font-bold">Celkom: €{getTotalPrice().toFixed(2)}</p>
-                    {/* TODO: Add Checkout Button */}
-                    <Button size="lg" className="mt-2 w-full sm:w-auto" disabled> {/* Disabled for now */}
-                        Pokračovať k Pokladni
+                    <Button
+                        size="lg"
+                        className="mt-2 w-full sm:w-auto"
+                        onClick={handleCheckout}
+                        disabled={isCheckingOut || cartItems.length === 0}
+                    >
+                        {isCheckingOut ? (
+                            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Spracováva sa...</>
+                        ) : (
+                            'Pokračovať k Pokladni'
+                        )}
                     </Button>
-                 </div>
+                </div>
             </div>
         </div>
     );
