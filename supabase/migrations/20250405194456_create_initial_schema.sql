@@ -1,4 +1,3 @@
-
 -- Create profiles table linked to auth.users
 CREATE TABLE public.profiles (
   id uuid NOT NULL PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -11,8 +10,9 @@ CREATE TABLE public.profiles (
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow individual user access" ON public.profiles FOR ALL
   USING (auth.uid() = id);
+-- Admin access policy using a function to prevent recursion
 CREATE POLICY "Allow admin access" ON public.profiles FOR ALL
-  USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+  USING (public.is_admin());
 
 -- Create products table
 CREATE TABLE public.products (
@@ -29,7 +29,7 @@ ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow read access" ON public.products FOR SELECT
   USING (true);
 CREATE POLICY "Allow admin write access" ON public.products FOR ALL
-  USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+  USING (public.is_admin());
 
 -- Create orders table
 CREATE TABLE public.orders (
@@ -45,7 +45,7 @@ ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow individual user access" ON public.orders FOR ALL
   USING (auth.uid() = user_id);
 CREATE POLICY "Allow admin access" ON public.orders FOR ALL
-  USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+  USING (public.is_admin());
 
 -- Create order_items table
 CREATE TABLE public.order_items (
@@ -62,7 +62,23 @@ ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow individual user access based on order" ON public.order_items FOR ALL
   USING (EXISTS (SELECT 1 FROM public.orders WHERE id = order_items.order_id AND auth.uid() = orders.user_id));
 CREATE POLICY "Allow admin access" ON public.order_items FOR ALL
-  USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+  USING (public.is_admin());
+
+-- Function to check if the current user is an admin
+-- SECURITY DEFINER runs the function with the privileges of the user who created it (superuser),
+-- bypassing the RLS checks of the calling user for the SELECT inside the function.
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public -- Important to specify schema
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM profiles
+    WHERE id = auth.uid() AND role = 'admin'
+  );
+$$;
 
 -- Function to automatically update updated_at timestamps
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
