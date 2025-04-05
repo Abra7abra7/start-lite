@@ -219,11 +219,6 @@ const itemPrice = {
     textAlign: 'right' as const,
 }
 
-const unitPriceText = {
-    fontSize: '12px',
-    color: '#5f5f5f',
-}
-
 const totalAmountFooter = {
     fontWeight: 'bold',
 }

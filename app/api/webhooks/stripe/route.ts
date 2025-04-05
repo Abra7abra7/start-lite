@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { Resend } from 'resend';
 import { render } from '@react-email/render';
+import * as React from 'react'; 
 import OrderConfirmationEmail, { OrderConfirmationEmailProps } from '@/emails/OrderConfirmationEmail';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2024-04-10', // Use a specific API version
+    // @ts-expect-error - Persistent type mismatch issue with apiVersion
+    apiVersion: '2025-02-24.acacia', 
 });
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -79,8 +81,9 @@ export async function POST(req: NextRequest) {
 
                 const formattedLineItems = lineItemsResponse.data.map(item => ({
                     quantity: item.quantity ?? 0,
-                    description: item.description ?? 'Neznáma položka',
-                    unitPrice: formatCurrency(item.price?.unit_amount, item.price?.currency),
+                    description: item.description ?? 'Neznáma položka', 
+                    // Ensure currency passed to formatCurrency is string | null, not undefined
+                    unitPrice: formatCurrency(item.price?.unit_amount, item.price?.currency ?? null),
                     totalPrice: formatCurrency(item.amount_total, item.currency)
                 }));
                 
@@ -93,7 +96,9 @@ export async function POST(req: NextRequest) {
                     lineItems: formattedLineItems,
                 };
 
-                const emailHtml = await render(<OrderConfirmationEmail {...emailProps} />);
+                // Render the email component to HTML string
+                // Using React explicitly here just in case, though render should suffice
+                const emailHtml = await render(React.createElement(OrderConfirmationEmail, emailProps));
 
                 console.log(`Attempting to send confirmation email to ${customerEmail}...`);
                 const { data, error } = await resend.emails.send({
