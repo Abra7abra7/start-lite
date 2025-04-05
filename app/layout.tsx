@@ -1,5 +1,8 @@
 import type { Metadata } from 'next'
 import localFont from 'next/font/local'
+import { CartProvider } from "@/components/CartProvider";
+import { Toaster } from "@/components/ui/sonner"
+import { Header } from "@/components/Header";
 import './globals.css'
 
 const geistSans = localFont({
@@ -25,7 +28,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>{children}</body>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <CartProvider>
+          <div className="relative flex min-h-screen flex-col">
+            <Header />
+            <main className="flex-1">
+              {children}
+            </main>
+            {/* TODO: Add Footer later */}
+          </div>
+          <Toaster richColors position="top-right" />
+        </CartProvider>
+      </body>
     </html>
   )
 }
