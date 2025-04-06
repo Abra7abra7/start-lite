@@ -1,19 +1,36 @@
 'use server';
 
 import { z } from 'zod';
-import { createClient } from '@/lib/supabase/server'; // Použijeme serverového klienta
+import { createClient } from '@/lib/supabase/server'; 
 import { revalidatePath } from 'next/cache';
-import { Product } from "@/types/product"; // Import typu Product
+import { Product } from "@/types/product"; 
 
-// Schéma pre validáciu dát na serveri (podobná ako na klientovi, pridáme stock)
-// Poznámka: image_url posielame ako string, keďže upload je na klientovi
+// Schéma pre validáciu dát na serveri
 const productActionSchema = z.object({
-  name: z.string().min(3),
+  name: z.string().min(3, { message: 'Názov musí mať aspoň 3 znaky.' }),
   description: z.string().optional().nullable(),
-  price: z.coerce.number().positive(),
-  stock: z.coerce.number().int().min(0), // Pridaný stock
+  price: z.coerce.number().positive({ message: 'Cena musí byť kladné číslo.' }),
+  stock: z.coerce.number().int().min(0, { message: 'Skladové zásoby nemôžu byť záporné.' }),
   category: z.string().optional().nullable(),
-  image_url: z.string().url().optional().nullable(), // URL obrázka z klienta
+  image_url: z.string().url({ message: 'Neplatná URL obrázka.' }).optional().nullable(),
+  // Nové polia
+  color_detail: z.string().optional().nullable(),
+  taste_detail: z.string().optional().nullable(),
+  aroma_detail: z.string().optional().nullable(),
+  wine_type: z.string().optional().nullable(),
+  wine_region: z.string().optional().nullable(),
+  residual_sugar: z.string().optional().nullable(),
+  sugar_content_nm: z.string().optional().nullable(),
+  volume: z.string().optional().nullable(),
+  storage_temp: z.string().optional().nullable(),
+  serving_temp: z.string().optional().nullable(),
+  batch_number: z.string().optional().nullable(),
+  allergens: z.string().optional().nullable(),
+  alcohol_content: z.string().optional().nullable(),
+  producer: z.string().optional().nullable(),
+  bottler: z.string().optional().nullable(),
+  country_of_origin: z.string().optional().nullable(),
+  ean_link: z.string().url({ message: 'Neplatná URL EAN linku.' }).optional().nullable(),
 });
 
 // Typ pre dáta produktu posielané z formulára
@@ -22,33 +39,43 @@ export type ProductData = z.infer<typeof productActionSchema>;
 // Definuje návratový stav/typ pre Server Action
 export type AddProductState = {
   error?: string | null;
-  fieldErrors?: {
-    name?: string[];
-    description?: string[];
-    price?: string[];
-    stock?: string[];
-    category?: string[];
-    image_url?: string[];
-  } | null;
+  fieldErrors?: z.inferFlattenedErrors<typeof productActionSchema>['fieldErrors']; 
   success: boolean;
-  data?: ProductData | null; // Použijeme definovaný typ ProductData
+  data?: Product; 
 };
 
 export async function addProduct(
-  prevState: AddProductState, // Použijeme definovaný typ stavu
-  formData: FormData // Tento parameter sa teraz použije
-): Promise<AddProductState> { // Explicitný návratový typ
+  prevState: AddProductState, 
+  formData: FormData 
+): Promise<AddProductState> { 
 
   console.log('Server Action addProduct called with FormData');
 
-  // 1. Extrahujeme dáta z FormData
+  // 1. Extrahujeme dáta z FormData (vrátane nových polí)
   const rawFormData = {
     name: formData.get('name'),
     description: formData.get('description'),
     price: formData.get('price'),
     stock: formData.get('stock'),
     category: formData.get('category'),
-    image_url: formData.get('image_url'),
+    image_url: formData.get('image_url'), 
+    color_detail: formData.get('color_detail'),
+    taste_detail: formData.get('taste_detail'),
+    aroma_detail: formData.get('aroma_detail'),
+    wine_type: formData.get('wine_type'),
+    wine_region: formData.get('wine_region'),
+    residual_sugar: formData.get('residual_sugar'),
+    sugar_content_nm: formData.get('sugar_content_nm'),
+    volume: formData.get('volume'),
+    storage_temp: formData.get('storage_temp'),
+    serving_temp: formData.get('serving_temp'),
+    batch_number: formData.get('batch_number'),
+    allergens: formData.get('allergens'),
+    alcohol_content: formData.get('alcohol_content'),
+    producer: formData.get('producer'),
+    bottler: formData.get('bottler'),
+    country_of_origin: formData.get('country_of_origin'),
+    ean_link: formData.get('ean_link'),
   };
 
   // 2. Validácia dát pomocou Zod schémy
@@ -63,49 +90,58 @@ export async function addProduct(
     };
   }
 
-  const { name, description, price, stock, category, image_url } = validatedFields.data;
-
   // 3. Vytvorenie Supabase klienta
-  const supabase = createClient(); // Serverový klient
+  const supabase = createClient(); 
 
-  // 4. Vloženie do databázy
-  const { data, error } = await supabase
+  // 4. Vloženie do databázy (vrátane nových polí)
+  const { data: insertedData, error } = await supabase
     .from('products')
     .insert([
       {
-        name,
-        description: description || null,
-        price,
-        stock, // Pridaný stock
-        category: category || null,
-        image_url: image_url || null,
-        // id a created_at by mali byť generované DB
+        ...validatedFields.data, 
+        description: validatedFields.data.description || null,
+        category: validatedFields.data.category || null,
+        image_url: validatedFields.data.image_url || null,
+        color_detail: validatedFields.data.color_detail || null,
+        taste_detail: validatedFields.data.taste_detail || null,
+        aroma_detail: validatedFields.data.aroma_detail || null,
+        wine_type: validatedFields.data.wine_type || null,
+        wine_region: validatedFields.data.wine_region || null,
+        residual_sugar: validatedFields.data.residual_sugar || null,
+        sugar_content_nm: validatedFields.data.sugar_content_nm || null,
+        volume: validatedFields.data.volume || null,
+        storage_temp: validatedFields.data.storage_temp || null,
+        serving_temp: validatedFields.data.serving_temp || null,
+        batch_number: validatedFields.data.batch_number || null,
+        allergens: validatedFields.data.allergens || null,
+        alcohol_content: validatedFields.data.alcohol_content || null,
+        producer: validatedFields.data.producer || null,
+        bottler: validatedFields.data.bottler || null,
+        country_of_origin: validatedFields.data.country_of_origin || null,
+        ean_link: validatedFields.data.ean_link || null,
       },
     ])
-    .select() // Vrátiname vložený záznam
-    .single(); // Očakávame jeden záznam
+    .select() 
+    .single(); 
 
   // 5. Spracovanie výsledku
   if (error) {
     console.error('Supabase Insert Error:', error);
     return {
       error: `Chyba pri ukladaní produktu do databázy: ${error.message}`,
-      success: false, // Pridáme success flag
-      fieldErrors: null, // Pri chybe databázy nevraciame field errors
+      success: false, 
+      fieldErrors: undefined,
     };
   }
 
-  console.log('Product inserted successfully:', data);
+  console.log('Product inserted successfully:', insertedData);
 
-  // 6. Revalidácia cesty (aby sa zoznam produktov aktualizoval)
-  revalidatePath('/admin/produkty'); // Cesta k zoznamu produktov
-  revalidatePath('/'); // Prípadne aj hlavná stránka, ak zobrazuje produkty
+  // 6. Revalidácia cesty
+  revalidatePath('/admin/produkty'); 
+  revalidatePath('/'); 
 
-  // 7. Presmerovanie (voliteľné, odkomentuj ak treba a importuj redirect)
-  // redirect('/admin/produkty');
-
-  // 8. Vrátime úspešný stav
-  return { success: true, data: data[0] };
+  // 7. Vrátime úspešný stav s vloženými dátami
+  return { success: true, data: insertedData }; 
 }
 
 // Typ pre stav mazania (voliteľné, pre prípad použitia useFormState)
@@ -115,8 +151,8 @@ export type DeleteProductState = {
 };
 
 export async function deleteProduct(
-  // prevState: DeleteProductState, // Ak by sme použili useFormState
-  formData: FormData // ID pošleme cez FormData
+  // prevState: DeleteProductState, 
+  formData: FormData 
 ): Promise<DeleteProductState> {
   const supabase = createClient();
   const productId = formData.get('productId') as string;
@@ -135,11 +171,9 @@ export async function deleteProduct(
       .eq('id', productId)
       .single();
 
-    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = no rows returned
-      // Ak chyba nie je len 'nenájdený riadok', berieme to ako problém
+    if (fetchError && fetchError.code !== 'PGRST116') { 
       console.error('Error fetching product image URL before delete:', fetchError);
-      // Môžeme sa rozhodnúť pokračovať v mazaní alebo vrátiť chybu
-      // return { success: false, error: 'Chyba pri hľadaní produktu pred mazaním.' };
+      return { success: false, error: 'Chyba pri hľadaní produktu pred mazaním.' };
     }
 
     // 2. Zmazať produkt z databázy
@@ -156,9 +190,8 @@ export async function deleteProduct(
     // 3. Zmazať obrázok zo Storage, ak existoval
     if (productData?.image_url) {
       try {
-        // Extrahujeme cestu k súboru z URL
         const imageUrl = productData.image_url;
-        const bucketName = 'product-images'; // Názov tvojho bucketu
+        const bucketName = 'product-images'; 
         const filePath = imageUrl.substring(imageUrl.indexOf(`/${bucketName}/`) + `/${bucketName}/`.length);
 
         if (filePath) {
@@ -168,18 +201,17 @@ export async function deleteProduct(
             .remove([filePath]);
 
           if (deleteStorageError) {
-            // Chybu pri mazaní obrázka môžeme len zalogovať a neblokovať úspech mazania produktu
             console.warn('Warning: Failed to delete product image from storage:', deleteStorageError);
           }
         }
       } catch (pathError) {
-          console.warn('Warning: Could not parse file path from image_url for deletion:', pathError);
+        console.warn('Warning: Could not parse file path from image_url for deletion:', pathError);
       }
     }
 
     // 4. Revalidácia cesty
-    revalidatePath('/admin/produkty'); // Pre admin zoznam
-    // revalidatePath('/produkty'); // Ak máš aj verejný zoznam produktov
+    revalidatePath('/admin/produkty'); 
+    revalidatePath('/'); 
 
     console.log(`Product with ID: ${productId} deleted successfully.`);
     return { success: true };
@@ -191,15 +223,15 @@ export async function deleteProduct(
 }
 
 // Typ pre stav úpravy (podobný ako pri pridaní)
-export type UpdateProductState = AddProductState; // Môžeme použiť rovnaký stavový objekt
+export type UpdateProductState = AddProductState; 
 
 export async function updateProduct(
-  prevState: UpdateProductState, // Pridaný prevState
+  prevState: UpdateProductState, 
   formData: FormData
 ): Promise<UpdateProductState> {
   const supabase = createClient();
   const productId = formData.get('productId') as string;
-  const oldImageUrl = formData.get('oldImageUrl') as string | null; // Získame pôvodnú URL
+  const oldImageUrl = formData.get('oldImageUrl') as string | null; 
 
   if (!productId) {
     return { success: false, error: 'Chýba ID produktu pre úpravu.' };
@@ -207,7 +239,7 @@ export async function updateProduct(
 
   console.log(`Server Action updateProduct called for ID: ${productId}`);
 
-  let newImageUrl: string | null = oldImageUrl; // Predvolene ponecháme starú
+  let newImageUrl: string | null = oldImageUrl; 
   let uploadedNewFile = false;
 
   // 1. Skontrolujeme a prípadne nahráme nový obrázok
@@ -218,7 +250,7 @@ export async function updateProduct(
     if (imageFile && imageFile.size > 0) {
       const fileName = `product_${Date.now()}_${Math.random().toString(36).substring(2)}_${imageFile.name}`;
       const filePath = `${fileName}`;
-      const bucketName = 'product-images';
+      const bucketName = 'product-images'; 
 
       try {
         const { error: uploadError } = await supabase.storage
@@ -233,7 +265,6 @@ export async function updateProduct(
           return { success: false, error: `Chyba pri nahrávaní nového obrázka: ${uploadError.message}` };
         }
 
-        // Získame verejnú URL práve nahraného obrázka
         const { data: publicUrlData } = supabase.storage
           .from(bucketName)
           .getPublicUrl(filePath);
@@ -244,7 +275,6 @@ export async function updateProduct(
           console.log('New image uploaded successfully:', newImageUrl);
         } else {
           console.error('Could not get public URL for uploaded image.');
-          // Môžeme buď vrátiť chybu, alebo pokračovať bez obrázka
           return { success: false, error: 'Nepodarilo sa získať URL nahraného obrázka.' };
         }
       } catch (uploadCatchError) {
@@ -253,13 +283,10 @@ export async function updateProduct(
       }
     } else {
       console.log('Image file entry exists but is empty or invalid.');
-      // Ak klient poslal imageFile, ale je prázdny, znamená to, že obrázok bol odstránený
       newImageUrl = null;
-      uploadedNewFile = true; // Označíme, že sa manipulovalo s obrázkom (odstránenie)
+      uploadedNewFile = true; 
     }
   } else {
-    // Ak klient neposlal 'imageFile', znamená to, že obrázok sa nemá meniť
-    // newImageUrl už má hodnotu oldImageUrl zhora
     console.log('No new image file submitted, keeping old image URL (if any).');
   }
 
@@ -270,10 +297,26 @@ export async function updateProduct(
     price: formData.get('price'),
     stock: formData.get('stock'),
     category: formData.get('category'),
-    // image_url tu už nepoužijeme priamo z formData, máme newImageUrl
+    image_url: formData.get('image_url'), 
+    color_detail: formData.get('color_detail'),
+    taste_detail: formData.get('taste_detail'),
+    aroma_detail: formData.get('aroma_detail'),
+    wine_type: formData.get('wine_type'),
+    wine_region: formData.get('wine_region'),
+    residual_sugar: formData.get('residual_sugar'),
+    sugar_content_nm: formData.get('sugar_content_nm'),
+    volume: formData.get('volume'),
+    storage_temp: formData.get('storage_temp'),
+    serving_temp: formData.get('serving_temp'),
+    batch_number: formData.get('batch_number'),
+    allergens: formData.get('allergens'),
+    alcohol_content: formData.get('alcohol_content'),
+    producer: formData.get('producer'),
+    bottler: formData.get('bottler'),
+    country_of_origin: formData.get('country_of_origin'),
+    ean_link: formData.get('ean_link'),
   };
 
-  // Validácia bez image_url, keďže to riešime separátne
   const validatedFields = productActionSchema.omit({ image_url: true }).safeParse(rawFormData);
 
   if (!validatedFields.success) {
@@ -290,60 +333,60 @@ export async function updateProduct(
 
   try {
     // 3. Aktualizujeme produkt v databáze s novou URL obrázka
-    const { data, error: updateError } = await supabase
+    const { data: updatedData, error } = await supabase
       .from('products')
       .update({
-        name: productData.name,
-        description: productData.description,
-        price: productData.price,
-        stock: productData.stock,
-        category: productData.category,
-        image_url: newImageUrl, // Použijeme spracovanú URL
+        ...productData, 
+        image_url: newImageUrl, 
       })
-      .match({ id: productId })
-      .select() // Vraciame upravený záznam
-      .single(); // Očakávame jeden záznam
+      .eq('id', productId)
+      .select()
+      .single();
 
-    if (updateError) {
-      console.error('Error updating product in DB:', updateError);
-      return { success: false, error: `Chyba pri aktualizácii produktu: ${updateError.message}` };
+    if (error) {
+      console.error('Supabase Update Error:', error);
+      if (error.code === 'PGRST116') { 
+        return {
+          error: `Produkt s ID ${productId} nebol nájdený pre aktualizáciu.`,
+          success: false,
+          fieldErrors: undefined,
+        };
+      }
+      return {
+        error: `Chyba pri aktualizácii produktu v databáze: ${error.message}`,
+        success: false,
+        fieldErrors: undefined,
+      };
     }
 
     // 4. Ak bol nahraný nový obrázok a starý existoval, zmažeme starý obrázok
-    // (uploadedNewFile je true aj pri odstránení obrázka)
     if (uploadedNewFile && oldImageUrl) {
-        try {
-            const bucketName = 'product-images';
-            // Extrahujeme cestu k súboru z URL
-            const oldFilePath = new URL(oldImageUrl).pathname.split(`/${bucketName}/`)[1];
-            if (oldFilePath) {
-                console.log(`Deleting old image from storage: ${oldFilePath}`);
-                const { error: deleteStorageError } = await supabase.storage
-                    .from(bucketName)
-                    .remove([oldFilePath]);
-                if (deleteStorageError) {
-                    console.warn('Warning: Failed to delete old product image from storage:', deleteStorageError);
-                    // Nejde o kritickú chybu, logujeme varovanie
-                }
-            }
-        } catch(pathError) {
-            console.warn('Warning: Could not parse old file path from image_url for deletion:', pathError);
+      try {
+        const bucketName = 'product-images'; 
+        const oldFilePath = new URL(oldImageUrl).pathname.split(`/${bucketName}/`)[1];
+        if (oldFilePath) {
+          console.log(`Deleting old image from storage: ${oldFilePath}`);
+          const { error: deleteStorageError } = await supabase.storage
+            .from(bucketName)
+            .remove([oldFilePath]);
+          if (deleteStorageError) {
+            console.warn('Warning: Failed to delete old product image from storage:', deleteStorageError);
+          }
         }
+      } catch (pathError) {
+        console.warn('Warning: Could not parse old file path from image_url for deletion:', pathError);
+      }
     }
 
     // 5. Revalidácia cesty
     revalidatePath('/admin/produkty');
-    revalidatePath(`/admin/produkty/upravit/${productId}`); // Aj stránku úprav
+    revalidatePath(`/admin/produkty/edit/${productId}`); 
+    revalidatePath('/');
 
     console.log(`Product with ID: ${productId} updated successfully.`);
-    // Vrátime upravené dáta, použijeme importovaný typ Product
-    return { success: true, data: data as Product };
-
+    return { success: true, data: updatedData };
   } catch (e) {
     console.error('Unexpected error during product update:', e);
     return { success: false, error: 'Neočakávaná chyba počas úpravy produktu.' };
   }
 }
-
-// Funkcia na úpravu produktu (podobná štruktúra)
-// export async function updateProduct(id: string, productData: ProductData) { ... }

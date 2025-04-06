@@ -17,7 +17,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useFormState, useFormStatus } from 'react-dom'; // Správny import pre useFormStatus
-import { addProduct, updateProduct, AddProductState, UpdateProductState } from '@/app/admin/produkty/actions'; // Importujeme obe akcie a stavy
+import { 
+  addProduct, 
+  updateProduct, 
+  AddProductState, 
+  UpdateProductState 
+} from '@/app/admin/produkty/actions'; // Importujeme obe akcie a stavy
 import { toast } from 'sonner';
 import Image from 'next/image' // Použijeme Next.js Image pre náhľad
 import { Trash2 } from "lucide-react"
@@ -33,6 +38,24 @@ const productFormSchema = z.object({
   stock: z.coerce.number().int().min(0, { message: "Sklad musí byť 0 alebo viac." }),
   category: z.string().optional(),
   imageFile: z.instanceof(File).optional(), // Len pre klientský upload
+  // Nové polia v schéme
+  color_detail: z.string().optional(),
+  taste_detail: z.string().optional(),
+  aroma_detail: z.string().optional(),
+  wine_type: z.string().optional(),
+  wine_region: z.string().optional(),
+  residual_sugar: z.string().optional(),
+  sugar_content_nm: z.string().optional(),
+  volume: z.string().optional(),
+  storage_temp: z.string().optional(),
+  serving_temp: z.string().optional(),
+  batch_number: z.string().optional(),
+  allergens: z.string().optional(),
+  alcohol_content: z.string().optional(),
+  producer: z.string().optional(),
+  bottler: z.string().optional(),
+  country_of_origin: z.string().optional(),
+  ean_link: z.string().optional(),
 });
 
 type ProductFormValues = z.infer<typeof productFormSchema>;
@@ -62,6 +85,24 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
       stock: initialData?.stock ?? 0, // Použijeme ?? pre prípad, že stock je 0
       category: initialData?.category || '',
       imageFile: undefined,
+      // Nové polia - defaultné hodnoty
+      color_detail: initialData?.color_detail || '',
+      taste_detail: initialData?.taste_detail || '',
+      aroma_detail: initialData?.aroma_detail || '',
+      wine_type: initialData?.wine_type || '',
+      wine_region: initialData?.wine_region || '',
+      residual_sugar: initialData?.residual_sugar || '',
+      sugar_content_nm: initialData?.sugar_content_nm || '',
+      volume: initialData?.volume || '',
+      storage_temp: initialData?.storage_temp || '',
+      serving_temp: initialData?.serving_temp || '',
+      batch_number: initialData?.batch_number || '',
+      allergens: initialData?.allergens || '',
+      alcohol_content: initialData?.alcohol_content || '',
+      producer: initialData?.producer || '',
+      bottler: initialData?.bottler || '',
+      country_of_origin: initialData?.country_of_origin || '',
+      ean_link: initialData?.ean_link || '',
     },
   });
 
@@ -104,7 +145,10 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
 
     // Pridáme všetky polia do FormData
     Object.entries(values).forEach(([key, value]) => {
+      // Check if the value is not undefined or null, and not the imageFile field
       if (key !== 'imageFile' && value !== undefined && value !== null) {
+        // Ensure boolean false is converted to string 'false' if needed, although not applicable here
+        // For empty strings from optional fields, append them as empty strings
         formData.append(key, String(value));
       }
     });
@@ -228,6 +272,261 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
               <FormDescription>
                 Voliteľné, napr. typ vína, ročník...
               </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* color_detail Field */}
+        <FormField
+          control={form.control}
+          name="color_detail"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Detail farby</FormLabel>
+              <FormControl>
+                <Input placeholder="Napr. Iskrivá, zlatožltá farba..." {...field} value={field.value ?? ''} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* taste_detail Field */}
+        <FormField
+          control={form.control}
+          name="taste_detail"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Detail chuti</FormLabel>
+              <FormControl>
+                <Input placeholder="Napr. Plná, extraktívna chuť..." {...field} value={field.value ?? ''} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* aroma_detail Field */}
+        <FormField
+          control={form.control}
+          name="aroma_detail"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Detail vône</FormLabel>
+              <FormControl>
+                <Input placeholder="Napr. Intenzívna vôňa tropického ovocia..." {...field} value={field.value ?? ''} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* wine_type Field */}
+        <FormField
+          control={form.control}
+          name="wine_type"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Druh vína</FormLabel>
+              <FormControl>
+                <Input placeholder="Napr. Akostné, biele, polosuché" {...field} value={field.value ?? ''} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* wine_region Field */}
+        <FormField
+          control={form.control}
+          name="wine_region"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Vinohradnícka oblasť</FormLabel>
+              <FormControl>
+                <Input placeholder="Napr. Malokarpatská" {...field} value={field.value ?? ''} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* residual_sugar Field */}
+        <FormField
+          control={form.control}
+          name="residual_sugar"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Zbytkový cukor</FormLabel>
+              <FormControl>
+                <Input placeholder="Napr. 10 g/l" {...field} value={field.value ?? ''} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* sugar_content_nm Field */}
+        <FormField
+          control={form.control}
+          name="sugar_content_nm"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Cukornatosť pri zbere</FormLabel>
+              <FormControl>
+                <Input placeholder="Napr. 22 NM" {...field} value={field.value ?? ''} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* volume Field */}
+        <FormField
+          control={form.control}
+          name="volume"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Objem</FormLabel>
+              <FormControl>
+                <Input placeholder="Napr. 0,75 l" {...field} value={field.value ?? ''} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* storage_temp Field */}
+        <FormField
+          control={form.control}
+          name="storage_temp"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Teplota skladovania</FormLabel>
+              <FormControl>
+                <Input placeholder="Napr. 10 – 12°C" {...field} value={field.value ?? ''} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* serving_temp Field */}
+        <FormField
+          control={form.control}
+          name="serving_temp"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Teplota podávania</FormLabel>
+              <FormControl>
+                <Input placeholder="Napr. 10 – 12°C" {...field} value={field.value ?? ''} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* batch_number Field */}
+        <FormField
+          control={form.control}
+          name="batch_number"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Výrobná dávka</FormLabel>
+              <FormControl>
+                <Input placeholder="Napr. L.23" {...field} value={field.value ?? ''} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* allergens Field */}
+        <FormField
+          control={form.control}
+          name="allergens"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Alergény</FormLabel>
+              <FormControl>
+                <Input placeholder="Napr. Obsahuje siričitany" {...field} value={field.value ?? ''} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* alcohol_content Field */}
+        <FormField
+          control={form.control}
+          name="alcohol_content"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Obsah alkoholu</FormLabel>
+              <FormControl>
+                <Input placeholder="Napr. 12%" {...field} value={field.value ?? ''} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* producer Field */}
+        <FormField
+          control={form.control}
+          name="producer"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Výrobca</FormLabel>
+              <FormControl>
+                <Input placeholder="Napr. Pútec s.r.o., ..." {...field} value={field.value ?? ''} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* bottler Field */}
+        <FormField
+          control={form.control}
+          name="bottler"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Plnič</FormLabel>
+              <FormControl>
+                <Input placeholder="Napr. Pútec s.r.o." {...field} value={field.value ?? ''} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* country_of_origin Field */}
+        <FormField
+          control={form.control}
+          name="country_of_origin"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Krajina pôvodu</FormLabel>
+              <FormControl>
+                <Input placeholder="Napr. Slovensko" {...field} value={field.value ?? ''} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* ean_link Field */}
+        <FormField
+          control={form.control}
+          name="ean_link"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>EAN / Nutričný odkaz</FormLabel>
+              <FormControl>
+                <Input type="url" placeholder="https://..." {...field} value={field.value ?? ''} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
