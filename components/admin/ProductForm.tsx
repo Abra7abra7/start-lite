@@ -1,7 +1,7 @@
 'use client'; // This needs to be a client component for form handling
 
-import React from 'react';
-import { useForm } from 'react-hook-form';
+import React, { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form'; // useFormStatus patrí do react-dom
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from "@/components/ui/button";
@@ -15,205 +15,147 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from '@/components/ui/textarea';
-import { createClient } from '@/lib/supabase/client'; // Import client-side Supabase client PRE UPLOAD OBRÁZKA
-import { useFormState, useFormStatus } from 'react-dom'; // Pre prácu so Server Actions
-import { addProduct, type ProductData } from '@/app/admin/produkty/actions'; // Importujeme Server Action
-import { toast } from 'sonner'; // Import toast pre notifikácie (ak používaš shadcn/ui Sonner)
+import { Textarea } from "@/components/ui/textarea";
+import { useFormState, useFormStatus } from 'react-dom'; // Správny import pre useFormStatus
+import { addProduct, updateProduct, AddProductState, UpdateProductState } from '@/app/admin/produkty/actions'; // Importujeme obe akcie a stavy
+import { toast } from 'sonner';
+import Image from 'next/image' // Použijeme Next.js Image pre náhľad
+import { Trash2 } from "lucide-react"
+import { Product } from "@/types/product"; // Import nového typu
+import { Loader2 } from 'lucide-react'; // Pre indikátor načítania
 
-// Define the schema for form validation using Zod
+// Zod schéma zostáva rovnaká pre add/edit, ale použijeme ju pre typovanie formulára
+// Nepotrebujeme explicitne productId a oldImageUrl, tie pôjdu cez skryté polia
 const productFormSchema = z.object({
   name: z.string().min(3, { message: "Názov musí mať aspoň 3 znaky." }),
-  description: z.string().optional(), // Optional description
-  price: z.coerce // Coerce input to number
-    .number({
-      required_error: "Cena je povinná.",
-      invalid_type_error: "Cena musí byť číslo.",
-    })
-    .positive({ message: "Cena musí byť kladné číslo." }),
-  stock: z.coerce // PRIDANÉ: Počet kusov na sklade
-    .number({
-        required_error: "Počet kusov je povinný.",
-        invalid_type_error: "Počet kusov musí byť celé číslo.",
-     })
-    .int({ message: "Počet kusov musí byť celé číslo."}) // Ensure it's an integer
-    .min(0, { message: "Počet kusov nemôže byť záporný." }),
+  description: z.string().optional(),
+  price: z.coerce.number().positive({ message: "Cena musí byť kladné číslo." }),
+  stock: z.coerce.number().int().min(0, { message: "Sklad musí byť 0 alebo viac." }),
   category: z.string().optional(),
-  image: z.any().optional() // Using z.any() for simplicity with react-hook-form for FileList
+  imageFile: z.instanceof(File).optional(), // Len pre klientský upload
 });
 
 type ProductFormValues = z.infer<typeof productFormSchema>;
 
-// Komponent pre Submit tlačidlo, aby sme mohli zobraziť pending stav
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending} className="w-full sm:w-auto"> {/* Pridané responzívne šírky */}
-      {pending ? (
-          <>
-            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Ukladá sa...
-          </>
-      ) : 'Uložiť produkt'}
-    </Button>
-  );
+// Nové props pre komponent
+interface ProductFormProps {
+  mode: 'add' | 'edit';
+  initialData?: Product | null; // Typ produktu z databázy
 }
 
+export function ProductForm({ mode, initialData }: ProductFormProps) {
+  const [imagePreview, setImagePreview] = useState<string | null>(initialData?.image_url || null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
-export default function ProductForm() {
-  const supabase = createClient(); // Client-side Supabase len pre UPLOAD OBRÁZKA
+  // Inicializácia useFormState s príslušnou akciou
+  const action = mode === 'add' ? addProduct : updateProduct;
+  const initialState: AddProductState | UpdateProductState = { success: false };
+  const [state, formAction] = useFormState<AddProductState | UpdateProductState, FormData>(action, initialState);
 
-  // Použijeme useFormState pre prácu so Server Action
-  // Prvý argument je Server Action, druhý je počiatočný stav
-  // Upravený initial state, aby zodpovedal očakávanému návratovému typu
-  const initialState = { error: null, success: false, fieldErrors: null, data: null };
-  const [state, formAction] = useFormState(addProduct, initialState);
-
+  // react-hook-form inicializácia
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
     defaultValues: {
-      name: "",
-      description: "",
-      price: 0,
-      stock: 0, // PRIDANÉ: Defaultná hodnota pre stock
-      category: "",
-      image: undefined, // Lepšie ako null pre file input
+      name: initialData?.name || '',
+      description: initialData?.description || '',
+      price: initialData?.price || 0,
+      stock: initialData?.stock ?? 0, // Použijeme ?? pre prípad, že stock je 0
+      category: initialData?.category || '',
+      imageFile: undefined,
     },
   });
 
-  // Efekt na zobrazenie toast notifikácií po skončení akcie
-  React.useEffect(() => {
+  // Získanie pending stavu pre tlačidlo
+  const { pending } = useFormStatus();
+
+  // useEffect na spracovanie odpovede zo servera
+  useEffect(() => {
     if (state?.success) {
-      toast.success('Produkt bol úspešne uložený!');
-      form.reset(); // Reset formulára po úspešnom uložení
+      toast.success(mode === 'add' ? "Produkt úspešne pridaný!" : "Produkt úspešne upravený!");
+      // Reset formulára po úspechu
+      form.reset();
+      setImagePreview(null);
+      setImageFile(null);
+      // Prípadne presmerovanie, ak je potrebné
+      // napr. router.push('/admin/produkty')
     } else if (state?.error) {
-       // Zobrazíme všeobecnú chybu
-       toast.error(`Chyba: ${state.error}`);
-       // Zvýrazníme chybné polia (ak máme fieldErrors)
-       if (state.fieldErrors) {
-         Object.entries(state.fieldErrors).forEach(([fieldName, errors]) => {
-           if (errors && errors.length > 0) {
-             // react-hook-form neumožňuje priamo nastaviť chybu z externého zdroja jednoducho
-             // v useFormState, lepšie je zobraziť chyby nad formulárom alebo cez toast
-             console.error(`Field ${fieldName} error: ${errors.join(', ')}`);
-             // Prípadne zobraziť detailnejšie chyby v toaste
-             toast.error(`Chyba v poli ${fieldName}: ${errors.join(', ')}`);
-             // Skusime nastaviť chybu aj do react-hook-form, aj keď to nemusí byť ideálne
-             form.setError(fieldName as keyof ProductFormValues, {
-                 type: 'server',
-                 message: errors.join(', ')
-             });
-           }
-         });
-       }
-    }
-  }, [state, form]); // Pridaný form do závislostí
-
-  // Zmenená onSubmit logika pre volanie Server Action
-  async function onSubmit(values: ProductFormValues) {
-    console.log("Form validated values:", values);
-
-    let imageUrl: string | null = null;
-    const imageFile = values.image && values.image.length > 0 ? values.image[0] : null;
-
-    // 1. Upload image if selected (ostáva na klientovi)
-    if (imageFile) {
-      // Tu by mala byť zobrazená indikácia nahrávania obrázka
-      toast.info('Nahrávam obrázok...');
-      const fileExt = imageFile.name.split('.').pop();
-      // Bezpečnejší názov súboru - napr. kombinácia user ID (ak je) a timestamp/random string
-      const fileName = `product_${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `${fileName}`; // Path within the bucket
-
-      console.log(`Attempting to upload ${filePath} to bucket product-images`);
-      const { error: uploadError } = await supabase.storage
-        .from('product-images') // Uisti sa, že bucket 'product-images' existuje a má správne politiky
-        .upload(filePath, imageFile);
-
-      if (uploadError) {
-        console.error('Error uploading image:', uploadError);
-        toast.error(`Chyba pri nahrávaní obrázka: ${uploadError.message}`);
-        return; // Stop submission if upload fails
-      } else {
-        // Construct the public URL
-        const { data: urlData } = supabase.storage
-          .from('product-images')
-          .getPublicUrl(filePath);
-        imageUrl = urlData?.publicUrl || null;
-        console.log("Image uploaded successfully. Public URL:", imageUrl);
-        toast.success('Obrázok úspešne nahraný.');
+      toast.error(state.error);
+      // Zobrazenie chýb pri poliach
+      if (state.fieldErrors) {
+        for (const [fieldName, errors] of Object.entries(state.fieldErrors)) {
+          if (errors) {
+            form.setError(fieldName as keyof ProductFormValues, {
+              type: "server",
+              message: errors.join(", "),
+            });
+          }
+        }
       }
     }
+  }, [state, form, mode]); // Zahrnutie form a mode do závislostí
 
-    // 2. Príprava dát pre Server Action
-    // Musíme poslať dáta vo formáte, ktorý Server Action očakáva
-    // Keďže voláme akciu manuálne, nemôžeme priamo použiť FormData.
-    // Upravíme volanie formAction tak, aby prijalo náš objekt.
-    // V actions.ts upravíme akciu, aby tieto dáta čítala.
-    const productData: ProductData = {
-      name: values.name,
-      description: values.description || null,
-      price: values.price,
-      stock: values.stock, // Pridaný stock
-      category: values.category || null,
-      image_url: imageUrl, // Posielame URL získanú z uploadu
-    };
-
-    // 3. Volanie Server Action
-    // Server Action `addProduct` teraz očakáva `(prevState, formData)`.
-    // Keďže voláme manuálne, `formData` nebude automaticky vyplnené.
-    // Musíme nájsť spôsob, ako odovzdať naše `productData`.
-    // Riešenie: Predáme dáta ako súčasť `prevState` alebo ako samostatný argument, ak to useFormState umožňuje.
-    // Najjednoduchšie je priamo zavolať Server Action funkciu, ale stratíme výhody useFormState pre pending/error handling.
-    // Alternatíva: Použiť skrytý input alebo prispôsobiť Server Action.
-    // Skúsime volať formAction, ale musíme zabezpečiť, aby dáta boli dostupné.
-    // Hack: Predáme dáta cez FormData objekt manuálne.
+  // Handler pre odoslanie
+  const onSubmit = async (/*values: ProductFormValues*/) => {
+    // Tento handler už nie je priamo potrebný, logika sa presunula do useFormState
+    // Vytvoríme FormData manuálne, pretože react-hook-form má problémy s File inputom
+    // priamo v spojení s useFormState
     const formData = new FormData();
-    Object.entries(productData).forEach(([key, value]) => {
-      if (value !== null && value !== undefined) {
+    const values = form.getValues(); // Získame aktuálne hodnoty
+
+    // Pridáme všetky polia do FormData
+    Object.entries(values).forEach(([key, value]) => {
+      if (key !== 'imageFile' && value !== undefined && value !== null) {
         formData.append(key, String(value));
       }
     });
 
-    console.log("Calling formAction with constructed FormData");
-    formAction(formData); // Teraz by to malo fungovať s useFormState/useFormStatus
+    // Pridáme súbor, ak bol vybraný
+    if (imageFile) {
+      formData.append('imageFile', imageFile);
+    } else if (imagePreview && mode === 'edit') {
+      // Ak editujeme a obrázok nebol zmenený, pošleme pôvodnú URL
+      formData.append('image_url', imagePreview);
+    }
 
-    // Reset a notifikácie sa riešia v React.useEffect na základe 'state'
-  }
+    // Pridáme ID a starú URL pre editáciu
+    if (mode === 'edit' && initialData) {
+      formData.append('productId', initialData.id);
+      if (initialData.image_url) {
+        formData.append('oldImageUrl', initialData.image_url);
+      }
+    }
 
-  // Použijeme handleSubmit z react-hook-form na validáciu, ale onSubmit logika je vlastná
+    // Teraz zavoláme formAction (z useFormState) s pripravenou FormData
+    formAction(formData); // Volanie akcie bez argumentov
+  };
+
+  // Handler pre zmenu súboru
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setImageFile(null);
+      setImagePreview(initialData?.image_url || null); // Vrátime pôvodný alebo null
+    }
+  };
+
+  // Handler pre odstránenie obrázka
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+  };
+
   return (
     <Form {...form}>
-      {/* Formulár teraz ODKAZUJE na serverovú akciu pomocou `action` prop,
-          ale `onSubmit` z react-hook-form stále beží PRVÝ pre validáciu a upload. */}
-      <form
-        onSubmit={form.handleSubmit(onSubmit)} // Validácia a upload + manuálne volanie formAction
-        className="space-y-8"
-      >
-        {/* Zobrazenie všeobecných chýb zo Server Action */}
-         {state?.error && !state.fieldErrors && (
-           <div className="text-sm text-red-600 p-3 bg-red-100 border border-red-400 rounded-md" role="alert">
-             {state.error}
-           </div>
-         )}
-         {/* Zobrazenie chýb polí (ak existujú) */}
-         {/* Toto je zložitejšie integrovať priamo s FormField, zobrazíme ich hromadne hore */}
-         {state?.fieldErrors && (
-            <div className="text-sm text-red-600 p-3 bg-red-100 border border-red-400 rounded-md space-y-1" role="alert">
-                <p className="font-medium">Prosím, opravte nasledujúce chyby:</p>
-                <ul className="list-disc list-inside">
-                    {Object.entries(state.fieldErrors).map(([field, errors]) =>
-                        errors?.map((error, index) => (
-                            <li key={`${field}-${index}`}>{field}: {error}</li>
-                        ))
-                    )}
-                </ul>
-            </div>
-         )}
-
+      {/* Použijeme vlastný onSubmit handler, ktorý potom zavolá formAction */}
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        {/* Name Field */}
         <FormField
           control={form.control}
           name="name"
@@ -221,16 +163,14 @@ export default function ProductForm() {
             <FormItem>
               <FormLabel>Názov produktu</FormLabel>
               <FormControl>
-                <Input placeholder="Napr. Pesecká Leánka 2023" {...field} />
+                <Input placeholder="Napr. Pútec Cabernet Sauvignon" {...field} />
               </FormControl>
-              <FormDescription>
-                Hlavný názov produktu.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
 
+        {/* Description Field */}
         <FormField
           control={form.control}
           name="description"
@@ -238,17 +178,14 @@ export default function ProductForm() {
             <FormItem>
               <FormLabel>Popis</FormLabel>
               <FormControl>
-                <Textarea
-                  placeholder="Zadajte voliteľný popis produktu..."
-                  className="resize-none" // Prevent manual resizing
-                  {...field}
-                />
+                <Textarea placeholder="Voliteľný popis produktu..." {...field} value={field.value ?? ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
+        {/* Price Field */}
         <FormField
           control={form.control}
           name="price"
@@ -256,17 +193,14 @@ export default function ProductForm() {
             <FormItem>
               <FormLabel>Cena (€)</FormLabel>
               <FormControl>
-                {/* Use type="number" and step for better UX */}
-                <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                <Input type="number" step="0.01" placeholder="19.99" {...field} />
               </FormControl>
-              <FormDescription>
-                Zadajte cenu produktu v EUR.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
 
+        {/* Stock Field */}
         <FormField
           control={form.control}
           name="stock"
@@ -274,26 +208,14 @@ export default function ProductForm() {
             <FormItem>
               <FormLabel>Počet kusov na sklade</FormLabel>
               <FormControl>
-                {/* Uistíme sa, že hodnota je číslo pre input type=number */}
-                <Input
-                    type="number"
-                    step="1"
-                    min="0" // Validácia priamo v HTML
-                    placeholder="0"
-                    {...field}
-                    onChange={event => field.onChange(+event.target.value)} // Konvertujeme na číslo
-                    value={field.value ?? 0} // Default hodnota pre zobrazenie
-                />
+                <Input type="number" step="1" placeholder="50" {...field} />
               </FormControl>
-              <FormDescription>
-                Zadajte aktuálny počet kusov na sklade.
-              </FormDescription>
-              {/* Zobrazí chyby z Zod schémy + serverové chyby nastavené cez form.setError */}
               <FormMessage />
             </FormItem>
           )}
         />
 
+        {/* Category Field */}
         <FormField
           control={form.control}
           name="category"
@@ -301,47 +223,61 @@ export default function ProductForm() {
             <FormItem>
               <FormLabel>Kategória</FormLabel>
               <FormControl>
-                {/* TODO: Consider using a Select component if categories are predefined */}
-                <Input placeholder="Napr. Biele víno, Suché" {...field} />
+                <Input placeholder="Napr. Červené víno, Suché" {...field} value={field.value ?? ''} />
               </FormControl>
               <FormDescription>
-                Voliteľná kategória pre filtrovanie.
+                Voliteľné, napr. typ vína, ročník...
               </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        {/* Image Upload Input */}
+        {/* Image Upload Field */}
         <FormField
           control={form.control}
-          name="image"
-          render={({ field: { onChange, value, ...rest } }) => ( // Destructure onChange etc.
+          name="imageFile"
+          render={({ /*field*/ }) => ( // field sa tu priamo nepoužije pre input type file
             <FormItem>
               <FormLabel>Obrázok produktu</FormLabel>
               <FormControl>
-                <Input 
-                  type="file" 
-                  accept="image/png, image/jpeg, image/webp" // Specify accepted types
-                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                  onChange={(event) => {
-                    // Get the FileList from the event
-                    const fileList = event.target.files;
-                    // Call the original onChange with the FileList
-                    onChange(fileList); 
-                  }}
-                  {...rest} // Pass the rest of the field props
-                 />
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                />
               </FormControl>
+              {imagePreview && (
+                <div className="mt-4 relative w-32 h-32 border rounded-md overflow-hidden">
+                  <Image src={imagePreview} alt="Náhľad obrázka" layout="fill" objectFit="cover" />
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-1 right-1 w-6 h-6"
+                    onClick={handleRemoveImage}
+                    type="button"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
+              {!imagePreview && mode === 'edit' && initialData?.image_url && (
+                  <p className="text-sm text-muted-foreground mt-2">Pôvodný obrázok bude zachovaný.</p>
+              )}
               <FormDescription>
-                Nahrajte obrázok produktu (PNG, JPG, WEBP).
+                Vyberte obrázok pre produkt (nepovinné).
               </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <SubmitButton />
+        {/* Submit Button */}
+        <Button type="submit" disabled={pending}>
+          {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {mode === 'edit' ? 'Uložiť zmeny' : 'Pridať produkt'}
+        </Button>
       </form>
     </Form>
   );
