@@ -133,29 +133,15 @@ export async function POST(req: Request) {
                              // Fetch line items for the email
                             const lineItemsResponse = await stripe.checkout.sessions.listLineItems(session.id, {
                                 limit: 50, // Adjust limit as needed
-                                expand: ['data.price.product'] // <<< EXPAND product data directly
                             });
 
-                            // Map line items including product image URL
+                            // Map line items WITHOUT image URL (reverted to original)
                             const emailLineItems = lineItemsResponse.data.map(item => {
-                                // Default image URL or placeholder
-                                let imageUrl: string | undefined = undefined;
-                                // Ensure price and product data exist and product is expanded object
-                                if (item.price?.product && typeof item.price.product === 'object') {
-                                    const product = item.price.product as Stripe.Product; // Cast to Stripe.Product
-                                    // Use the first image if available
-                                    if (product.images && product.images.length > 0) {
-                                        imageUrl = product.images[0];
-                                    }
-                                    // TODO: Potentially add a fallback image URL if product.images is empty
-                                }
-
                                 return {
                                     quantity: item.quantity ?? 0,
                                     description: item.description ?? 'Neznáma položka',
                                     unitPrice: formatCurrency(item.price?.unit_amount, item.price?.currency ?? null),
                                     totalPrice: formatCurrency(item.amount_total, item.currency),
-                                    imageUrl: imageUrl // Add the image URL
                                 };
                             });
 
@@ -166,7 +152,7 @@ export async function POST(req: Request) {
                                 orderId: supabaseOrderId, // Use our internal order ID
                                 orderDate: formatDate(session.created),
                                 totalAmount: formatCurrency(session.amount_total, session.currency),
-                                lineItems: emailLineItems, // Use the mapped array with image URLs
+                                lineItems: emailLineItems, // Use the mapped array WITHOUT image URLs
                                 // Shop details are now defaults in the email component
                             };
 

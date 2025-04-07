@@ -53,7 +53,8 @@ export const OrderConfirmationEmail = ({
             <Container style={container}>
                 {logoUrl && (
                     <Section style={logoContainer}>
-                         <Img src={logoUrl} width="120" height="auto" alt={`${shopName} Logo`} />
+                         {/* Center the image using margin auto */}
+                         <Img src={logoUrl} width="120" height="auto" alt={`${shopName} Logo`} style={{ margin: '0 auto' }} />
                     </Section>
                 )}
                 <Heading style={h1}>Ďakujeme za Vašu objednávku!</Heading>
@@ -65,29 +66,30 @@ Dobrý deň{customerName ? ` ${customerName}` : ''},
                     Nižšie nájdete súhrn Vašej objednávky:
                 </Text>
 
-                <Section style={tableContainer}>
+                <Section style={{ marginTop: '20px' }}> 
                      <Row style={tableHeader}>
-                        <Column style={columnHeader}>Položka</Column>
-                        <Column style={columnHeaderQty}>Množstvo</Column>
-                        <Column style={columnHeaderPrice}>Cena/ks</Column>
-                        <Column style={columnHeaderPriceTotal}>Spolu</Column>
+                        <Column style={{ ...tableColumn, textAlign: 'left' }}>Popis</Column>
+                        <Column style={{ ...tableColumn, width: '80px', textAlign: 'right' }}>Množ.</Column> 
+                        <Column style={{ ...tableColumn, width: '120px', textAlign: 'right' }}>Cena/ks</Column>
+                        <Column style={{ ...tableColumn, width: '120px', textAlign: 'right' }}>Spolu</Column>
                     </Row>
+
                     {lineItems.map((item, index) => (
                         <Row key={index} style={tableRow}>
-                            <Column style={tableCell}>{item.description}</Column>
-                            <Column style={tableCellQty}>{item.quantity}</Column>
-                            <Column style={tableCellPrice}>{item.unitPrice}</Column>
-                            <Column style={tableCellPriceTotal}>{item.totalPrice}</Column>
+                            <Column style={{ ...tableCell, textAlign: 'left' }}>{item.description}</Column>
+                            <Column style={{ ...tableCell, width: '80px', textAlign: 'right' }}>{item.quantity}</Column> 
+                            <Column style={{ ...tableCell, width: '120px', textAlign: 'right' }}>{item.unitPrice}</Column> 
+                            <Column style={{ ...tableCell, width: '120px', textAlign: 'right' }}>{item.totalPrice}</Column> 
                         </Row>
                     ))}
                 </Section>
 
                 <Hr style={hr} />
 
-                <Section style={totalSection}>
-                     <Row>
-                        <Column style={totalLabel}>Celková suma:</Column>
-                        <Column style={totalValue}>{totalAmount}</Column>
+                <Section style={{ marginTop: '20px' }}>
+                    <Row>
+                        <Column style={{ ...totalLabel, textAlign: 'right', paddingRight: '10px' }}>Celková suma:</Column>
+                        <Column style={{ ...totalValue, width: '120px', textAlign: 'right' }}>{totalAmount}</Column>
                     </Row>
                 </Section>
 
@@ -134,9 +136,9 @@ const container = {
 };
 
 const logoContainer = {
-    textAlign: 'center' as const,
-    marginBottom: '20px',
-}
+    margin: '20px 0',
+    textAlign: 'center' as const, // Ensure logo section is centered
+};
 
 const h1 = {
     color: '#1d1c1d',
@@ -159,60 +161,44 @@ const hr = {
     margin: '20px 0',
 };
 
-const tableContainer = {
-    borderCollapse: 'collapse' as const,
-    width: '100%',
-};
-
 const tableHeader = {
-    backgroundColor: '#f2f2f2',
+    borderBottom: '1px solid #eaeaea',
+    padding: '8px 0',
+    backgroundColor: '#f8f8f8', // Light background for header
 };
-
-const columnHeader = {
-    padding: '8px 12px',
-    fontSize: '12px',
-    fontWeight: 'bold',
-    textAlign: 'left' as const,
-    borderBottom: '1px solid #dddddd',
-};
-
-const columnHeaderQty = { ...columnHeader, textAlign: 'center' as const };
-const columnHeaderPrice = { ...columnHeader, textAlign: 'right' as const };
-const columnHeaderPriceTotal = { ...columnHeader, textAlign: 'right' as const };
 
 const tableRow = {
-     borderBottom: '1px solid #eeeeee',
+    borderBottom: '1px solid #eaeaea',
+};
+
+const tableColumn = {
+    padding: '10px 8px', 
+    fontSize: '12px',
+    fontWeight: 'bold',
+    color: '#555',
+    // textAlign is set inline based on column type
 };
 
 const tableCell = {
-    padding: '8px 12px',
-    fontSize: '14px',
-    textAlign: 'left' as const,
-};
-
-const tableCellQty = { ...tableCell, textAlign: 'center' as const };
-const tableCellPrice = { ...tableCell, textAlign: 'right' as const };
-const tableCellPriceTotal = { ...tableCell, textAlign: 'right' as const };
-
-
-const totalSection = {
-    paddingTop: '10px',
+    padding: '10px 8px', 
+    fontSize: '12px',
+    verticalAlign: 'middle', // Align content vertically
+    // textAlign is set inline based on column type
 };
 
 const totalLabel = {
     fontSize: '14px',
     fontWeight: 'bold',
-    textAlign: 'right' as const,
-    paddingRight: '10px',
-    width: '80%'
+    color: '#333',
+    // width: 'auto', // Let it take available space before the value
 };
 
 const totalValue = {
-    fontSize: '16px',
+    fontSize: '14px',
     fontWeight: 'bold',
-    textAlign: 'right' as const,
+    color: '#333',
+    // width and textAlign set inline
 };
-
 
 const footer = {
     marginTop: '20px',
