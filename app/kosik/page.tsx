@@ -1,60 +1,21 @@
 'use client';
 
-import { useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2, Loader2, AlertTriangle } from 'lucide-react';
-import { loadStripe } from '@stripe/stripe-js';
-import { toast } from 'sonner';
-import { useSearchParams } from 'next/navigation';
-
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+import { Trash2, AlertTriangle } from 'lucide-react';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 export default function KosikPage() {
     const { cartItems, removeItem, updateQuantity, getTotalPrice, clearCart, isLoading } = useCart();
-    const [isCheckingOut, setIsCheckingOut] = useState(false);
     const searchParams = useSearchParams();
     const paymentCancelled = searchParams.get('status') === 'cancelled';
+    const router = useRouter();
 
-    const handleCheckout = async () => {
-        setIsCheckingOut(true);
-        try {
-            const stripe = await stripePromise;
-            if (!stripe) {
-                throw new Error('Stripe.js has not loaded yet.');
-            }
-
-            const response = await fetch('/api/checkout', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(cartItems),
-            });
-
-            const session = await response.json();
-
-            if (!response.ok) {
-                throw new Error(session.error || 'Nastala chyba pri vytváraní platby.');
-            }
-
-            const result = await stripe.redirectToCheckout({
-                sessionId: session.sessionId,
-            });
-
-            if (result.error) {
-                throw new Error(result.error.message || 'Nepodarilo sa presmerovať na platobnú bránu.');
-            }
-        } catch (error) {
-            console.error("Checkout error:", error);
-            const errorMessage = error instanceof Error ? error.message : 'Nastala chyba počas procesu platby.';
-            toast.error(errorMessage);
-        } finally {
-            setIsCheckingOut(false);
-        }
+    const handleProceedToCheckout = () => {
+        router.push('/pokladna');
     };
 
     if (isLoading) {
@@ -138,14 +99,10 @@ export default function KosikPage() {
                     <Button
                         size="lg"
                         className="mt-2 w-full sm:w-auto"
-                        onClick={handleCheckout}
-                        disabled={isCheckingOut || cartItems.length === 0}
+                        onClick={handleProceedToCheckout}
+                        disabled={cartItems.length === 0}
                     >
-                        {isCheckingOut ? (
-                            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Spracováva sa...</>
-                        ) : (
-                            'Pokračovať k Pokladni'
-                        )}
+                        Pokračovať k Pokladni
                     </Button>
                 </div>
             </div>
