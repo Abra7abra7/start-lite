@@ -41,10 +41,10 @@ export const OrderConfirmationEmail = ({
     orderDate,
     totalAmount,
     lineItems,
-    shopName = 'Váš Obchod', // Default shop name
-    shopAddress = 'Vaša Adresa',
+    shopName = 'Putec s.r.o.', // Default shop name
+    shopAddress = 'Pezinská 154, 902 01 Vinosady, Slovensko', // Default shop address
     shopUrl = baseUrl,
-    logoUrl // Optional: Provide URL to your logo
+    logoUrl = 'https://jfmssfymrewzbnsbynxd.supabase.co/storage/v1/object/public/product-images/public/logo/logoputec%20(1).webp' // Default logo
 }: OrderConfirmationEmailProps) => (
     <Html>
         <Head />
@@ -94,7 +94,7 @@ Dobrý deň{customerName ? ` ${customerName}` : ''},
                 <Hr style={hr} />
 
                 <Text style={text}>
-                    Ak máte akékoľvek otázky, odpovedzte na tento email alebo nás kontaktujte na <Link href={`mailto:info@vasadomena.sk`}>info@vasadomena.sk</Link>. {/* Replace with your actual contact email */}
+                    Ak máte akékoľvek otázky, odpovedzte na tento email alebo nás kontaktujte na <Link href={`mailto:info@putec.sk`}>info@putec.sk</Link>. {/* Replace with your actual contact email if different */}
                 </Text>
                 <Text style={footerText}>
                     S pozdravom,
