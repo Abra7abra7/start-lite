@@ -20,24 +20,24 @@ import { useFormState, useFormStatus } from 'react-dom'; // Správny import pre 
 import { 
   addProduct, 
   updateProduct, 
-  AddProductState, 
-  UpdateProductState 
-} from '@/app/admin/produkty/actions'; // Importujeme obe akcie a stavy
+  ProductFormState // Import the unified state type
+ } from '@/app/admin/produkty/actions'; // Importujeme obe akcie a stavy
 import { toast } from 'sonner';
 import Image from 'next/image' // Použijeme Next.js Image pre náhľad
 import { Trash2 } from "lucide-react"
 import { Product } from "@/types/product"; // Import nového typu
 import { Loader2 } from 'lucide-react'; // Pre indikátor načítania
+import { useRouter } from 'next/navigation'; // Import useRouter
 
 // Zod schéma zostáva rovnaká pre add/edit, ale použijeme ju pre typovanie formulára
 // Nepotrebujeme explicitne productId a oldImageUrl, tie pôjdu cez skryté polia
 const productFormSchema = z.object({
   name: z.string().min(3, { message: "Názov musí mať aspoň 3 znaky." }),
   description: z.string().optional(),
-  price: z.coerce.number().positive({ message: "Cena musí byť kladné číslo." }),
+  price: z.coerce.number().positive({ message: "Cena musí byť kladné číslo." }).refine(val => val !== 0, { message: "Cena nesmie byť 0" }),
   stock: z.coerce.number().int().min(0, { message: "Sklad musí byť 0 alebo viac." }),
   category: z.string().optional(),
-  imageFile: z.instanceof(File).optional(), // Len pre klientský upload
+  image: z.instanceof(File).optional(), // Len pre klientský upload
   // Nové polia v schéme
   color_detail: z.string().optional(),
   taste_detail: z.string().optional(),
@@ -68,12 +68,12 @@ interface ProductFormProps {
 
 export function ProductForm({ mode, initialData }: ProductFormProps) {
   const [imagePreview, setImagePreview] = useState<string | null>(initialData?.image_url || null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [image, setImage] = useState<File | null>(null);
 
   // Inicializácia useFormState s príslušnou akciou
   const action = mode === 'add' ? addProduct : updateProduct;
-  const initialState: AddProductState | UpdateProductState = { success: false };
-  const [state, formAction] = useFormState<AddProductState | UpdateProductState, FormData>(action, initialState);
+  const initialState: ProductFormState = { success: false }; // Use unified state type for initial state
+  const [state, formAction] = useFormState<ProductFormState, FormData>(action, initialState); // Use unified state type
 
   // react-hook-form inicializácia
   const form = useForm<ProductFormValues>({
@@ -81,10 +81,10 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
     defaultValues: {
       name: initialData?.name || '',
       description: initialData?.description || '',
-      price: initialData?.price || 0,
+      price: initialData?.price ?? undefined, // Use undefined for empty number fields
       stock: initialData?.stock ?? 0, // Použijeme ?? pre prípad, že stock je 0
       category: initialData?.category || '',
-      imageFile: undefined,
+      image: undefined, // Rename for consistency
       // Nové polia - defaultné hodnoty
       color_detail: initialData?.color_detail || '',
       taste_detail: initialData?.taste_detail || '',
@@ -109,31 +109,45 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
   // Získanie pending stavu pre tlačidlo
   const { pending } = useFormStatus();
 
-  // useEffect na spracovanie odpovede zo servera
+  const router = useRouter(); // Get router instance
+
+  // Spracovanie stavu z useFormState (zobrazenie toast notifikácií a presmerovanie)
   useEffect(() => {
-    if (state?.success) {
-      toast.success(mode === 'add' ? "Produkt úspešne pridaný!" : "Produkt úspešne upravený!");
-      // Reset formulára po úspechu
-      form.reset();
-      setImagePreview(null);
-      setImageFile(null);
-      // Prípadne presmerovanie, ak je potrebné
-      // napr. router.push('/admin/produkty')
-    } else if (state?.error) {
-      toast.error(state.error);
-      // Zobrazenie chýb pri poliach
-      if (state.fieldErrors) {
-        for (const [fieldName, errors] of Object.entries(state.fieldErrors)) {
-          if (errors) {
-            form.setError(fieldName as keyof ProductFormValues, {
-              type: "server",
-              message: errors.join(", "),
-            });
+    // Reagujeme len ak máme platný stavový objekt
+    if (state) {
+      console.log('Form state changed:', state); // Logovanie pre debug
+      if (state.success === true) {
+        // Úspech - zobrazíme toast a presmerujeme
+        toast.success(mode === 'add' ? "Produkt pridaný" : "Produkt aktualizovaný");
+        // Zvážiť, či resetovať formulár pred presmerovaním
+        // form.reset(); 
+        // setImagePreview(null);
+        // setImage(null);
+        router.push('/admin/produkty'); 
+      } else if (state.error) {
+        // Chyba - zobrazíme chybový toast a prípadné chyby polí
+        toast.error(`Chyba pri ukladaní: ${state.error}`);
+
+        // Zobrazenie chýb pri poliach (ak existujú)
+        if (state.fieldErrors) {
+          for (const [fieldName, errors] of Object.entries(state.fieldErrors)) {
+            // Check if errors is an array before accessing length/join
+            if (Array.isArray(errors) && errors.length > 0) {
+              form.setError(fieldName as keyof ProductFormValues, { 
+                type: 'server', 
+                message: errors.join(', ') 
+              });
+            }
           }
         }
+      } else {
+        // Handle potential state where success is false but no specific error is set
+        // (e.g., initial state or intermediate state)
+        // console.log('Form state is not success or error yet.');
       }
+      // Nerobíme nič pre neúspešné stavy bez explicitnej chyby (napr. počiatočný stav)
     }
-  }, [state, form, mode]); // Zahrnutie form a mode do závislostí
+  }, [state, form, mode, router]); // Odstránenie toast zo závislostí
 
   // Handler pre odoslanie
   const onSubmit = async (/*values: ProductFormValues*/) => {
@@ -145,8 +159,8 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
 
     // Pridáme všetky polia do FormData
     Object.entries(values).forEach(([key, value]) => {
-      // Check if the value is not undefined or null, and not the imageFile field
-      if (key !== 'imageFile' && value !== undefined && value !== null) {
+      // Check if the value is not undefined or null, and not the image field
+      if (key !== 'image' && value !== undefined && value !== null) {
         // Ensure boolean false is converted to string 'false' if needed, although not applicable here
         // For empty strings from optional fields, append them as empty strings
         formData.append(key, String(value));
@@ -154,8 +168,8 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
     });
 
     // Pridáme súbor, ak bol vybraný
-    if (imageFile) {
-      formData.append('imageFile', imageFile);
+    if (image) {
+      formData.append('image', image); // Rename for consistency
     } else if (imagePreview && mode === 'edit') {
       // Ak editujeme a obrázok nebol zmenený, pošleme pôvodnú URL
       formData.append('image_url', imagePreview);
@@ -177,28 +191,28 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setImageFile(file);
+      setImage(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
       };
       reader.readAsDataURL(file);
     } else {
-      setImageFile(null);
+      setImage(null);
       setImagePreview(initialData?.image_url || null); // Vrátime pôvodný alebo null
     }
   };
 
   // Handler pre odstránenie obrázka
   const handleRemoveImage = () => {
-    setImageFile(null);
+    setImage(null);
     setImagePreview(null);
   };
 
   return (
     <Form {...form}>
       {/* Použijeme vlastný onSubmit handler, ktorý potom zavolá formAction */}
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(onSubmit)} encType="multipart/form-data" className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Name Field */}
         <FormField
           control={form.control}
@@ -535,7 +549,7 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
         {/* Image Upload Field */}
         <FormField
           control={form.control}
-          name="imageFile"
+          name="image"
           render={({ /*field*/ }) => ( // field sa tu priamo nepoužije pre input type file
             <FormItem>
               <FormLabel>Obrázok produktu</FormLabel>
@@ -573,9 +587,9 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
         />
 
         {/* Submit Button */}
-        <Button type="submit" disabled={pending}>
+        <Button type="submit" disabled={pending} className="md:col-span-2 justify-self-start">
           {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {mode === 'edit' ? 'Uložiť zmeny' : 'Pridať produkt'}
+          {mode === 'edit' ? 'Uložiť zmeny produktu' : 'Pridať produkt'}
         </Button>
       </form>
     </Form>
