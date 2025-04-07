@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image'; // Import Image component
 import { createClient } from '@/lib/supabase/server';
 import { Button } from '@/components/ui/button';
 import { redirect } from 'next/navigation';
@@ -20,9 +21,16 @@ export async function Header() {
             <div className="container flex h-14 items-center max-w-screen-2xl">
                 {/* TODO: Replace with actual logo */}
                 <Link href="/" className="mr-6 flex items-center space-x-2">
-                     <span className="font-bold sm:inline-block">
-                         Vinárstvo Pútec
-                     </span>
+                    <Image 
+                        src="https://jfmssfymrewzbnsbynxd.supabase.co/storage/v1/object/public/product-images/public/logo/logoputec-removebg-preview.png" 
+                        alt="Víno Pútec Logo"
+                        width={32} // Smaller logo for header
+                        height={32}
+                        className="h-8 w-8" // Tailwind classes for size
+                    />
+                    <span className="font-bold sm:inline-block">
+                        Víno Pútec
+                    </span>
                 </Link>
 
                 <nav className="flex flex-1 items-center justify-end space-x-4">
