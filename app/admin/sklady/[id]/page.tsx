@@ -15,7 +15,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Button } from "@/components/ui/button";
+import { WarehouseActionsClient } from './_components/WarehouseActionsClient';
+// Import typu pre inventár
+import { InventoryItemWithProduct } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,9 +53,13 @@ export default async function WarehouseDetailPage({ params }: WarehouseDetailPag
     notFound(); // Alebo zobraziť vlastnú správu
   }
 
+  const { name, inventory } = warehouseDetails;
+  // Typovanie inventára pre odovzdanie do klienta
+  const inventoryData: InventoryItemWithProduct[] = inventory || [];
+
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">Detail Skladu: {warehouseDetails.name}</h1>
+      <h1 className="text-2xl font-semibold">Detail Skladu: {name}</h1>
 
       <Card>
         <CardHeader>
@@ -70,8 +76,8 @@ export default async function WarehouseDetailPage({ params }: WarehouseDetailPag
               </TableRow>
             </TableHeader>
             <TableBody>
-              {warehouseDetails.inventory.length > 0 ? (
-                warehouseDetails.inventory.map(item => (
+              {inventory.length > 0 ? (
+                inventory.map(item => (
                   <TableRow key={item.product_id}>
                     <TableCell className="font-medium">
                       {item.products ? item.products.name : `Produkt ID: ${item.product_id}`}
@@ -92,12 +98,8 @@ export default async function WarehouseDetailPage({ params }: WarehouseDetailPag
         </CardContent>
       </Card>
 
-      {/* Pridanie sekcie s tlačidlami */}
-      <div className="flex gap-2 mt-4">
-        <Button>Príjem tovaru</Button>
-        <Button variant="outline">Prevod tovaru</Button>
-        {/* TODO: Implementovať funkčnosť tlačidiel */}
-      </div>
+      {/* Odovzdanie warehouseId a inventoryData do klientského komponentu */}
+      <WarehouseActionsClient warehouseId={warehouseId} inventoryData={inventoryData} />
 
     </div>
   );

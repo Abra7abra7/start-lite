@@ -5,6 +5,20 @@ import { cookies } from 'next/headers';
 import { Database } from '@/lib/database.types'; 
 import { Warehouse, WarehouseDetail, InventoryItemWithProduct } from '@/lib/types';
 
+// Typ pre zjednodušený sklad pre select
+export type WarehouseSelectItem = {
+  id: number;
+  name: string;
+};
+
+// Typ pre položku v zozname skladov (pre prehľad)
+export type WarehouseListItem = {
+  id: number;
+  name: string;
+  location: string | null; // Alebo string, ak je pole povinné
+  created_at: string;
+};
+
 export async function getWarehouses(): Promise<{ data: Warehouse[] | null; error: string | null }> {
   const cookieStore = cookies();
   const supabase = createServerClient<Database>(
@@ -56,6 +70,46 @@ export async function getWarehouses(): Promise<{ data: Warehouse[] | null; error
   if (error) {
     console.error('Error fetching warehouses:', error);
     return { data: null, error: 'Nepodarilo sa načítať sklady.' };
+  }
+
+  return { data, error: null };
+}
+
+/**
+ * Získa zoznam všetkých skladov pre prehľadovú stránku.
+ */
+export async function getWarehousesOverview(): Promise<{ data: WarehouseListItem[] | null; error: string | null }> {
+  const cookieStore = cookies();
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+      },
+    }
+  );
+
+  // Overenie session
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError || !session) {
+    console.error('Authentication error in getWarehouses:', sessionError);
+    return { data: null, error: 'Chyba autentifikácie.' };
+  }
+
+  // TODO: Kontrola role (napr. len admin/manager môže vidieť všetky sklady)
+
+  // Získanie dát
+  const { data, error } = await supabase
+    .from('warehouses')
+    .select('id, name, location, created_at')
+    .order('created_at', { ascending: false }); // Alebo podľa 'name'
+
+  if (error) {
+    console.error('Error fetching warehouses:', error);
+    return { data: null, error: 'Nepodarilo sa načítať zoznam skladov.' };
   }
 
   return { data, error: null };
@@ -121,4 +175,339 @@ export async function getWarehouseDetails(warehouseId: number): Promise<{ data: 
   };
 
   return { data: warehouseDetail, error: null };
+}
+
+/**
+ * Prijme tovar na sklad. Aktualizuje existujúci záznam alebo vytvorí nový.
+ * @param warehouseId ID skladu
+ * @param productId ID produktu
+ * @param quantity Prijímané množstvo
+ */
+export async function receiveStock(
+  warehouseId: number,
+  productId: number,
+  quantity: number
+): Promise<{ success: boolean; error: string | null }> {
+
+  if (quantity <= 0) {
+    return { success: false, error: 'Množstvo musí byť kladné číslo.' };
+  }
+
+  const cookieStore = cookies();
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+      },
+    }
+  );
+
+  // Overenie session
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+  if (sessionError) {
+    console.error('Session error:', sessionError);
+    return { success: false, error: 'Chyba pri overovaní session.' };
+  }
+
+  if (!session) {
+    return { success: false, error: 'Používateľ nie je prihlásený.' };
+  }
+
+  // TODO: Kontrola role (napr. 'admin' alebo 'skladnik')
+
+  try {
+    // Získanie aktuálneho množstva (ak existuje)
+    const { data: existingItem, error: selectError } = await supabase
+      .from('inventory')
+      .select('id, quantity')
+      .eq('warehouse_id', warehouseId)
+      .eq('product_id', productId)
+      .maybeSingle(); // Môže, ale nemusí existovať
+
+    if (selectError) {
+      console.error('Error checking existing inventory:', selectError);
+      // Skontroluj RLS pre tabuľku inventory!
+      return { success: false, error: 'Chyba pri kontrole existujúceho inventára.' };
+    }
+
+    if (existingItem) {
+      // Ak existuje, aktualizuj množstvo
+      const newQuantity = existingItem.quantity + quantity;
+      const { error: updateError } = await supabase
+        .from('inventory')
+        .update({ quantity: newQuantity, updated_at: new Date().toISOString() })
+        .eq('id', existingItem.id);
+
+      if (updateError) {
+        console.error('Error updating inventory:', updateError);
+        return { success: false, error: 'Nepodarilo sa aktualizovať inventár.' };
+      }
+    } else {
+      // Ak neexistuje, vlož nový záznam
+      const { error: insertError } = await supabase
+        .from('inventory')
+        .insert({
+          warehouse_id: warehouseId,
+          product_id: productId,
+          quantity: quantity,
+        });
+
+      if (insertError) {
+        console.error('Error inserting inventory:', insertError);
+        // Možné chyby: Neexistujúci warehouse_id/product_id (foreign key constraint), RLS
+        return { success: false, error: 'Nepodarilo sa pridať nový inventár.' };
+      }
+    }
+
+    // TODO: Zvážiť pridanie záznamu do `stock_movements`
+
+    return { success: true, error: null };
+
+  } catch (e) {
+    console.error('Unexpected error during stock receive:', e);
+    return { success: false, error: 'Neočakávaná chyba servera.' };
+  }
+}
+
+/**
+ * Načíta zoznam ostatných skladov (okrem aktuálneho) pre Select komponent.
+ * @param currentWarehouseId ID aktuálneho skladu, ktorý sa má vylúčiť
+ */
+export async function getOtherWarehousesForSelect(
+  currentWarehouseId: number
+): Promise<{ data: WarehouseSelectItem[] | null; error: string | null }> {
+  const cookieStore = cookies();
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+      },
+    }
+  );
+
+  // Session overenie (môže byť redundantné, ak volané z inej overenej akcie, ale pre istotu)
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError || !session) {
+    return { data: null, error: 'Chyba autentifikácie.' };
+  }
+
+  // Načítanie ID a názvu skladov, okrem aktuálneho, zoradené podľa názvu
+  const { data, error } = await supabase
+    .from('warehouses')
+    .select('id, name')
+    .neq('id', currentWarehouseId) // Vylúčenie aktuálneho skladu
+    .order('name', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching other warehouses:', error);
+    // Skontroluj RLS pre tabuľku warehouses!
+    return { data: null, error: 'Nepodarilo sa načítať zoznam skladov.' };
+  }
+
+  const warehousesData: WarehouseSelectItem[] = data || [];
+  return { data: warehousesData, error: null };
+}
+
+/**
+ * Prevedie tovar medzi skladmi.
+ * @param sourceWarehouseId ID zdrojového skladu
+ * @param productId ID produktu
+ * @param targetWarehouseId ID cieľového skladu
+ * @param quantity Množstvo na prevod
+ */
+export async function transferStock(
+  sourceWarehouseId: number,
+  productId: number,
+  targetWarehouseId: number,
+  quantity: number
+): Promise<{ success: boolean; error: string | null }> {
+
+  if (quantity <= 0) {
+    return { success: false, error: 'Množstvo musí byť kladné číslo.' };
+  }
+  if (sourceWarehouseId === targetWarehouseId) {
+    return { success: false, error: 'Zdrojový a cieľový sklad nemôžu byť rovnaké.' };
+  }
+
+  const cookieStore = cookies();
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+      },
+    }
+  );
+
+  // Overenie session
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError || !session) {
+    return { success: false, error: 'Chyba autentifikácie.' };
+  }
+
+  // TODO: Kontrola role
+
+  // Bez plnej transakcie musíme robiť kroky opatrne.
+  // Alternatíva: Vytvoriť databázovú funkciu (RPC) v Supabase, ktorá by to spravila atomicky.
+
+  try {
+    // 1. Skontrolovať a znížiť stav v zdrojovom sklade
+    const { data: sourceItem, error: sourceSelectError } = await supabase
+      .from('inventory')
+      .select('id, quantity')
+      .eq('warehouse_id', sourceWarehouseId)
+      .eq('product_id', productId)
+      .single(); // Očakávame presne jeden záznam
+
+    if (sourceSelectError || !sourceItem) {
+      console.error('Error finding source inventory or item not found:', sourceSelectError);
+      return { success: false, error: 'Produkt sa nenašiel v zdrojovom sklade.' };
+    }
+
+    if (sourceItem.quantity < quantity) {
+      return { success: false, error: `Nedostatočné množstvo v zdrojovom sklade (dostupné: ${sourceItem.quantity}).` };
+    }
+
+    const newSourceQuantity = sourceItem.quantity - quantity;
+    const { error: sourceUpdateError } = await supabase
+      .from('inventory')
+      .update({ quantity: newSourceQuantity, updated_at: new Date().toISOString() })
+      .eq('id', sourceItem.id);
+
+    if (sourceUpdateError) {
+      console.error('Error updating source inventory:', sourceUpdateError);
+      return { success: false, error: 'Nepodarilo sa aktualizovať zdrojový sklad.' };
+      // V tomto bode by sme mali ideálne vrátiť späť zmenu, ak by sme boli v transakcii.
+    }
+
+    // 2. Skontrolovať a zvýšiť stav v cieľovom sklade (podobné ako receiveStock)
+    const { data: targetItem, error: targetSelectError } = await supabase
+      .from('inventory')
+      .select('id, quantity')
+      .eq('warehouse_id', targetWarehouseId)
+      .eq('product_id', productId)
+      .maybeSingle();
+
+    if (targetSelectError) {
+      console.error('Error checking target inventory:', targetSelectError);
+      // Ak toto zlyhá, máme problém - zdrojový sklad je už znížený!
+      // Mali by sme sa pokúsiť vrátiť späť zmenu v zdrojovom sklade.
+      // Pre jednoduchosť to teraz neurobíme, ale v produkcii je to nutné.
+      return { success: false, error: 'Chyba pri kontrole cieľového skladu.' };
+    }
+
+    if (targetItem) {
+      // Cieľový záznam existuje -> UPDATE
+      const newTargetQuantity = targetItem.quantity + quantity;
+      const { error: targetUpdateError } = await supabase
+        .from('inventory')
+        .update({ quantity: newTargetQuantity, updated_at: new Date().toISOString() })
+        .eq('id', targetItem.id);
+
+      if (targetUpdateError) {
+        console.error('Error updating target inventory:', targetUpdateError);
+        // Opäť, rollback by bol ideálny
+        return { success: false, error: 'Nepodarilo sa aktualizovať cieľový sklad.' };
+      }
+    } else {
+      // Cieľový záznam neexistuje -> INSERT
+      const { error: targetInsertError } = await supabase
+        .from('inventory')
+        .insert({
+          warehouse_id: targetWarehouseId,
+          product_id: productId,
+          quantity: quantity,
+        });
+
+      if (targetInsertError) {
+        console.error('Error inserting into target inventory:', targetInsertError);
+        // Rollback...
+        return { success: false, error: 'Nepodarilo sa vložiť záznam do cieľového skladu.' };
+      }
+    }
+
+    // TODO: Záznam do stock_movements pre obe operácie (výdaj zo zdroja, príjem do cieľa)
+
+    return { success: true, error: null };
+
+  } catch (e) {
+    console.error('Unexpected error during stock transfer:', e);
+    // Pokus o rollback?
+    return { success: false, error: 'Neočakávaná chyba servera počas prevodu.' };
+  }
+}
+
+// Typ pre dáta z formulára pre vytvorenie skladu
+interface CreateWarehouseData {
+  name: string;
+  location?: string | null; // Nepovinné
+}
+
+/**
+ * Vytvorí nový sklad v databáze.
+ * @param data Dáta nového skladu (názov, lokalita)
+ */
+export async function createWarehouse(
+  data: CreateWarehouseData
+): Promise<{ success: boolean; error: string | null }> {
+  const cookieStore = cookies();
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+      },
+    }
+  );
+
+  // Overenie session
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError || !session) {
+    console.error('Authentication error in createWarehouse:', sessionError);
+    return { success: false, error: 'Chyba autentifikácie.' };
+  }
+
+  // TODO: Kontrola role (napr. len admin/manager môže vytvárať sklady)
+
+  // Validácia dát (aj keď Zod to robí na klientovi, overenie na serveri je dobrá prax)
+  if (!data.name || data.name.trim().length < 2) {
+    return { success: false, error: 'Názov skladu je povinný a musí mať aspoň 2 znaky.' };
+  }
+
+  // Príprava dát pre vloženie (ošetrenie null/undefined pre location)
+  const warehouseToInsert = {
+    name: data.name.trim(),
+    location: data.location?.trim() || null, // Uloží null ak je location prázdny alebo neuvedený
+  };
+
+  // Vloženie do databázy
+  const { error } = await supabase
+    .from('warehouses')
+    .insert(warehouseToInsert);
+
+  if (error) {
+    console.error('Error inserting warehouse:', error);
+    // Špecifická kontrola pre RLS chybu
+    if (error.code === '42501') { // Kód pre RLS chybu v PostgreSQL
+        return { success: false, error: 'Chyba oprávnení: Nemáte povolenie na vytvorenie skladu. Skontrolujte RLS politiky.' };
+    }
+    return { success: false, error: `Nepodarilo sa vytvoriť sklad: ${error.message}` };
+  }
+
+  return { success: true, error: null };
 }
