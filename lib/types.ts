@@ -4,7 +4,8 @@ export type Product = {
   description: string | null;
   price: number;
   category: string | null;
-  imageUrl: string | null;
+  // Oprava: Zmena z imageUrl na image_url
+  image_url: string | null;
   created_at: string;
   alcohol_content: number | null;
   volume: number | null;
@@ -67,7 +68,7 @@ export type OrderItem = {
   product_id: number;
   quantity: number;
   price_per_unit: number;
-  product?: Pick<Product, 'name' | 'imageUrl'>; // Voliteľne načítané meno a obrázok produktu
+  product?: Pick<Product, 'name' | 'image_url'>; // Voliteľne načítané meno a obrázok produktu
 };
 
 // Nové typy pre sklady
@@ -84,8 +85,18 @@ export type InventoryItem = {
   warehouse_id: number;
   quantity: number;
   updated_at: string;
-  product?: Pick<Product, 'name' | 'imageUrl'>; // Voliteľne pre zobrazenie názvu produktu
+  product?: Pick<Product, 'name' | 'image_url'>; // Voliteľne pre zobrazenie názvu produktu
   warehouse?: Pick<Warehouse, 'name'>; // Voliteľne pre zobrazenie názvu skladu
+};
+
+export type InventoryItemWithProduct = InventoryItem & {
+  // Oprava: Zmena z 'product' na 'products', aby to sedelo s tým, čo vracia Supabase
+  // Oprava: Zmena z imageUrl na image_url
+  products: Pick<Product, 'id' | 'name' | 'category' | 'image_url'> | null; 
+};
+
+export type WarehouseDetail = Warehouse & {
+  inventory: InventoryItemWithProduct[];
 };
 
 export type StockMovement = {
