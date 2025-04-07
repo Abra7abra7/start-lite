@@ -1,32 +1,32 @@
 import React from 'react';
 import { createClient } from '@/lib/supabase/server';
-import { ProductForm } from '@/components/admin/ProductForm'; // Opravený pomenovaný import
+import { ProductForm } from '@/components/admin/ProductForm';
 import { notFound } from 'next/navigation';
 
-// Typ pre parametre stránky (z URL)
+// Typ pre parametre stránky (z URL) - zmenené id na productId
 interface EditProductPageProps {
   params: {
-    id: string; // ID produktu z URL
+    productId: string; // ID produktu z URL - ZMENENÉ
   };
 }
 
 // Server Component pre načítanie dát produktu
 export default async function EditProductPage({ params }: EditProductPageProps) {
-  const { id } = params;
+  const { productId } = params; // Použijeme productId - ZMENENÉ
   const supabase = createClient();
 
-  console.log(`Loading product data for edit page, ID: ${id}`);
+  console.log(`Loading product data for edit page, ID: ${productId}`); // Logujeme productId
 
-  // Načítame dáta produktu podľa ID
+  // Načítame dáta produktu podľa ID - použijeme productId
   const { data: product, error } = await supabase
     .from('products')
-    .select('*'/* DEBUG: Fetching all columns for edit */)
-    .eq('id', id)
-    .single(); // Očakávame presne jeden výsledok
+    .select('*')
+    .eq('id', productId) // Hľadáme podľa productId v stĺpci 'id'
+    .single();
 
   if (error || !product) {
-    console.error(`Error fetching product with ID ${id} for edit:`, error);
-    notFound(); // Zobrazí štandardnú 404 stránku, ak produkt neexistuje
+    console.error(`Error fetching product with ID ${productId} for edit:`, error);
+    notFound();
   }
 
   console.log('Product data fetched for edit:', product);
@@ -35,7 +35,6 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">Upraviť Produkt</h1>
-      {/* Odovzdáme produkt ako initialData a nastavíme mode na 'edit' */}
       <ProductForm initialData={product} mode="edit" />
     </div>
   );

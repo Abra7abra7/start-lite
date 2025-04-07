@@ -191,8 +191,8 @@ export async function updateProduct(
   let uploadedNewFile = false;
 
   // 1. Skontrolujeme a prípadne nahráme nový obrázok
-  if (formData.has('imageFile')) {
-    const imageFile = formData.get('imageFile') as File;
+  if (formData.has('image')) {
+    const imageFile = formData.get('image') as File;
     console.log('New image file found, attempting upload...');
 
     if (imageFile && imageFile.size > 0) {
@@ -200,42 +200,56 @@ export async function updateProduct(
       const filePath = `${fileName}`;
       const bucketName = 'product-images'; 
 
-      try {
-        const { error: uploadError } = await supabase.storage
-          .from(bucketName)
-          .upload(filePath, imageFile, {
-            cacheControl: '3600',
-            upsert: false,
-          });
+      console.log(`Uploading image to Supabase Storage: ${filePath}`);
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from(bucketName)
+        .upload(filePath, imageFile, {
+          cacheControl: '3600',
+          upsert: false,
+        });
 
-        if (uploadError) {
-          console.error('Error uploading new image:', uploadError);
-          return { success: false, error: `Chyba pri nahrávaní nového obrázka: ${uploadError.message}` };
-        }
-
-        const { data: publicUrlData } = supabase.storage
-          .from(bucketName)
-          .getPublicUrl(filePath);
-
-        if (publicUrlData?.publicUrl) {
-          newImageUrl = publicUrlData.publicUrl;
-          uploadedNewFile = true;
-          console.log('New image uploaded successfully:', newImageUrl);
-        } else {
-          console.error('Could not get public URL for uploaded image.');
-          return { success: false, error: 'Nepodarilo sa získať URL nahraného obrázka.' };
-        }
-      } catch (uploadCatchError) {
-        console.error('Unexpected error during image upload:', uploadCatchError);
-        return { success: false, error: 'Neočakávaná chyba pri nahrávaní obrázka.' };
+      if (uploadError) {
+        console.error('Error uploading new image:', uploadError);
+        return { 
+          success: false, 
+          error: `Chyba pri nahrávaní nového obrázka: ${uploadError.message}`,
+          fieldErrors: undefined // Ensure fieldErrors is defined
+        };
       }
+
+      console.log('Image uploaded successfully to storage:', uploadData);
+
+      // Získanie verejnej URL nahraného súboru
+      const { data: publicUrlData } = supabase.storage
+        .from(bucketName)
+        .getPublicUrl(filePath);
+
+      if (!publicUrlData || !publicUrlData.publicUrl) {
+        console.error('Error getting public URL for the uploaded image:', filePath);
+        // Zvážiť zmazanie súboru, ak URL zlyhá?
+        try {
+          await supabase.storage.from(bucketName).remove([filePath]);
+          console.log(`Removed uploaded file ${filePath} due to URL fetch error.`);
+        } catch (removeError) {
+          console.error(`Failed to remove uploaded file ${filePath} after URL fetch error:`, removeError);
+        }
+        return { 
+          success: false, 
+          error: 'Nepodarilo sa získať verejnú URL pre nahraný obrázok.',
+          fieldErrors: undefined
+        };
+      }
+
+      newImageUrl = publicUrlData.publicUrl;
+      console.log(`Image uploaded successfully, URL: ${newImageUrl}`);
     } else {
-      console.log('Image file entry exists but is empty or invalid.');
-      newImageUrl = null;
-      uploadedNewFile = true; 
+      console.log('Image file entry exists but is empty or invalid. Setting image URL to null.');
+      newImageUrl = null; // Allows removing the image by submitting an empty file input
+      uploadedNewFile = true; // Treat as an update action regarding the image
     }
   } else {
-    console.log('No new image file submitted, keeping old image URL (if any).');
+    console.log('No new image file submitted in the form.');
+    // newImageUrl už je inicializovaný na oldImageUrl, takže tu nemusíme robiť nič
   }
 
   // 2. Extrahujeme a validujeme ostatné dáta
@@ -245,7 +259,6 @@ export async function updateProduct(
     price: formData.get('price'),
     stock: formData.get('stock'),
     category: formData.get('category'),
-    image_url: formData.get('image_url'), 
     color_detail: formData.get('color_detail'),
     taste_detail: formData.get('taste_detail'),
     aroma_detail: formData.get('aroma_detail'),
@@ -265,13 +278,14 @@ export async function updateProduct(
     ean_link: formData.get('ean_link'),
   };
 
-  const validatedFields = productActionSchema.omit({ image_url: true }).safeParse(rawFormData);
+  // Validujeme bez image_url, keďže ju manažujeme separátne
+  const validatedFields = productActionSchema.omit({ image_url: true }).safeParse(rawFormData); // image_url sa validuje zvlášť
 
   if (!validatedFields.success) {
     console.error('Server validation failed (text fields):', validatedFields.error.flatten().fieldErrors);
     return {
       success: false,
-      error: 'Neplatné údaje formulára (textové polia).',
+      error: 'Neplatné údaje formulára.', // Zjednodušená správa
       fieldErrors: validatedFields.error.flatten().fieldErrors,
     };
   }
@@ -281,12 +295,10 @@ export async function updateProduct(
 
   try {
     // 3. Aktualizujeme produkt v databáze s novou URL obrázka
+    console.log(`Updating product ${productId} with image_url: ${newImageUrl}`);
     const { data: updatedData, error } = await supabase
       .from('products')
-      .update({
-        ...productData, 
-        image_url: newImageUrl, 
-      })
+      .update({ ...productData, image_url: newImageUrl })
       .eq('id', productId)
       .select()
       .single();
@@ -307,22 +319,31 @@ export async function updateProduct(
       };
     }
 
-    // 4. Ak bol nahraný nový obrázok a starý existoval, zmažeme starý obrázok
-    if (uploadedNewFile && oldImageUrl) {
+    console.log('Product updated successfully in DB:', updatedData);
+
+    // 4. Ak bol nahraný nový obrázok a starý existoval, zmažeme starý obrázok zo Storage
+    if (uploadedNewFile && oldImageUrl && newImageUrl !== oldImageUrl) { // Delete only if a new file was uploaded AND old existed AND they are different
+      console.log(`Attempting to delete old image: ${oldImageUrl}`);
       try {
-        const bucketName = 'product-images'; 
-        const oldFilePath = new URL(oldImageUrl).pathname.split(`/${bucketName}/`)[1];
-        if (oldFilePath) {
-          console.log(`Deleting old image from storage: ${oldFilePath}`);
-          const { error: deleteStorageError } = await supabase.storage
+        const bucketName = 'product-images';
+        // Extrakt file path from URL
+        const urlParts = oldImageUrl.split('/');
+        const fileName = urlParts[urlParts.length - 1]; // Get the last part as filename
+        const filePath = fileName; // In simple cases, path might just be filename
+
+        if (filePath) {
+          console.log(`Deleting old image from storage: ${filePath}`);
+          const { error: deleteError } = await supabase.storage
             .from(bucketName)
-            .remove([oldFilePath]);
-          if (deleteStorageError) {
-            console.warn('Warning: Failed to delete old product image from storage:', deleteStorageError);
+            .remove([filePath]);
+
+          if (deleteError) {
+            console.warn('Warning: Failed to delete product image from storage:', deleteError);
           }
         }
-      } catch (pathError) {
-        console.warn('Warning: Could not parse old file path from image_url for deletion:', pathError);
+      } catch (deleteCatchError) {
+        console.error('Unexpected error during old image deletion:', deleteCatchError);
+        // Neberieme to ako fatálnu chybu
       }
     }
 
@@ -331,12 +352,19 @@ export async function updateProduct(
     revalidatePath(`/admin/produkty/edit/${productId}`); 
     revalidatePath('/');
 
-    console.log(`Product with ID: ${productId} updated successfully:`);
-    // 7. Vrátime úspešný stav s aktualizovanými dátami (klient zariadi redirect)
-    return { success: true, data: updatedData };
+    console.log(`Product with ID: ${productId} updated successfully.`);
+    // Vrátime úspešný stav
+    return { success: true, error: null }; // Jednoduchý úspešný návrat
+
   } catch (e) {
-    console.error('Unexpected error during product update:', e);
-    return { success: false, error: 'Neočakávaná chyba počas úpravy produktu.' };
+    const error = e as Error;
+    console.error('Unexpected error during product update:', error);
+    // Ensure prevState is passed back if needed, or return a generic error state
+    return {
+      success: false,
+      error: `Neočakávaná chyba: ${error.message}`,
+      fieldErrors: undefined,
+    };
   }
 }
 
@@ -388,10 +416,12 @@ export async function deleteProduct(
       try {
         const imageUrl = productData.image_url;
         const bucketName = 'product-images'; 
-        const filePath = imageUrl.substring(imageUrl.indexOf(`/${bucketName}/`) + `/${bucketName}/`.length);
+        const urlParts = imageUrl.split('/');
+        const fileName = urlParts[urlParts.length - 1]; // Get the last part as filename
+        const filePath = fileName; // In simple cases, path might just be filename
 
         if (filePath) {
-          console.log(`Attempting to delete image from storage: ${filePath}`);
+          console.log(`Deleting old image from storage: ${filePath}`);
           const { error: deleteStorageError } = await supabase.storage
             .from(bucketName)
             .remove([filePath]);
@@ -402,6 +432,7 @@ export async function deleteProduct(
         }
       } catch (pathError) {
         console.warn('Warning: Could not parse file path from image_url for deletion:', pathError);
+        // Logika extrakcie nemusí byť robustná pre všetky URL štruktúry
       }
     }
 
