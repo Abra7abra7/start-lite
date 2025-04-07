@@ -4,8 +4,12 @@ import { Product } from "@/types/product"; // Importujeme typ produktu
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"; // Odstránený CardDescription
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Import pre Tabs
+import { useCart } from "@/context/CartContext"; // Import hooku pre košík
+import { toast } from "sonner"; // Import pre notifikácie
 import Image from "next/image"; // Použijeme Next.js Image pre optimalizáciu
 import { Button } from "@/components/ui/button"; // Pre tlačidlo "Pridať do košíka"
+import { useState } from 'react'; // Import useState
+import { ShoppingCart, Minus, Plus } from 'lucide-react'; // Import ikon
 
 interface ProductDetailCardProps {
   product: Product;
@@ -25,10 +29,48 @@ export function ProductDetailCard({ product }: ProductDetailCardProps) {
     );
   };
 
+  const { addItem } = useCart(); // Získanie funkcie addItem z kontextu
+  const [quantity, setQuantity] = useState(1); // Stav pre množstvo
+
+  const incrementQuantity = () => {
+    const maxStock = typeof product.stock === 'number' ? product.stock : Infinity;
+    setQuantity(prev => Math.min(prev + 1, maxStock));
+  };
+
+  const decrementQuantity = () => {
+    setQuantity(prev => Math.max(prev - 1, 1)); // Minimum je 1
+  };
+
+  // Pomocné premenné pre disabled stavy
+  const isOutOfStock = typeof product.stock === 'number' && product.stock <= 0;
+  const hasPrice = product.price !== null && product.price !== undefined;
+  const canIncreaseQuantity = quantity < (typeof product.stock === 'number' ? product.stock : Infinity);
+
   const handleAddToCart = () => {
-    // TODO: Implementovať skutočnú logiku pridania do košíka (napr. volanie serverovej akcie, context API)
-    console.log(`Pridané do košíka: ${product.name} (ID: ${product.id})`);
-    // Sem môže prísť napr. zobrazenie notifikácie (toast)
+    // Mapovanie Product na typ očakávaný addItem (Omit<CartItem, "quantity">)
+    // Hlavne riešime image_url: null -> undefined
+    const itemToAdd = {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image_url: product.image_url === null ? undefined : product.image_url,
+      // Pridaj ďalšie polia z CartItem, ak ich addItem vyžaduje a sú v Product
+      // napr. description: product.description,
+      quantity: quantity,
+    };
+
+    try {
+      // Kontrola, či máme všetky potrebné údaje (hlavne cenu)
+      if (itemToAdd.price === null || itemToAdd.price === undefined) {
+        toast.error("Produkt nemá definovanú cenu a nemožno ho pridať do košíka.");
+        return;
+      }
+      addItem(itemToAdd); // Volanie funkcie z CartContext so správnym typom
+      toast.success(`${product.name} bol pridaný do košíka.`); // Zobrazenie notifikácie
+    } catch (error) {
+      console.error("Chyba pri pridávaní do košíka:", error);
+      toast.error("Nepodarilo sa pridať produkt do košíka.");
+    }
   };
 
   return (
@@ -150,14 +192,45 @@ export function ProductDetailCard({ product }: ProductDetailCardProps) {
           </CardContent>
 
           <CardFooter className="p-0 pt-6 mt-auto">
-            {/* TODO: Implementovať pridanie do košíka */}
-            <Button 
-              className="w-full"
-              onClick={handleAddToCart}
-              disabled={typeof product.stock === 'number' && product.stock <= 0} // Disable ak je vypredané
-            >
-                {typeof product.stock === 'number' && product.stock <= 0 ? 'Vypredané' : 'Pridať do košíka'}
-            </Button>
+            {/* --- Výber množstva a pridanie do košíka --- */}
+            <div className="flex items-center gap-4">
+               {/* Výber množstva - len ak je cena a nie je vypredané */} 
+              {!isOutOfStock && hasPrice && (
+                 <div className="flex items-center justify-center gap-1.5">
+                   <Button 
+                      variant="outline" 
+                      size="icon" 
+                      onClick={decrementQuantity} 
+                      disabled={quantity <= 1}
+                      aria-label="Znížiť množstvo"
+                      className="h-9 w-9"
+                   >
+                       <Minus className="h-4 w-4" />
+                   </Button>
+                   <span className="font-medium text-lg text-center w-10 tabular-nums" aria-live="polite">{quantity}</span>
+                   <Button 
+                      variant="outline" 
+                      size="icon" 
+                      onClick={incrementQuantity} 
+                      disabled={isOutOfStock || !canIncreaseQuantity}
+                      aria-label="Zvýšiť množstvo"
+                      className="h-9 w-9"
+                   >
+                       <Plus className="h-4 w-4" />
+                    </Button>
+                 </div>
+              )}
+              {/* Tlačidlo Pridať do košíka */} 
+              <Button 
+                size="lg"
+                className={`flex-grow ${!(!isOutOfStock && hasPrice) ? 'w-full' : ''}`} // w-full ak nie je counter
+                onClick={handleAddToCart}
+                disabled={isOutOfStock || !hasPrice}
+              >
+                 <ShoppingCart className="mr-2 h-5 w-5" />
+                 {isOutOfStock ? 'Vypredané' : 'Pridať do košíka'}
+              </Button>
+            </div>
           </CardFooter>
         </div>
       </div>

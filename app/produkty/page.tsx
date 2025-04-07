@@ -1,9 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import Image from 'next/image';
 import { SortDropdown } from '@/components/produkty/SortDropdown'; // Import nového komponentu
 import { CategoryFilter } from '@/components/produkty/CategoryFilter'; // Import filtra kategórií
+import { ProductCard } from '@/components/produkty/ProductCard'; // Import nového komponentu karty
 
 // Opt out of caching for this page, server-side render always
 export const dynamic = "force-dynamic";
@@ -117,51 +117,8 @@ export default async function ProduktyPage({ searchParams }: ProduktyPageProps) 
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full">
         {products.map((product) => (
-          <Link key={product.id} href={`/produkty/${product.id}`} className="group block border rounded-lg overflow-hidden shadow hover:shadow-lg transition-all duration-300 ease-in-out flex flex-col transform hover:-translate-y-1">
-            {/* Obrázok produktu */}
-            <div className="relative w-full h-48 overflow-hidden">
-              {product.image_url ? (
-                <Image
-                  src={product.image_url}
-                  alt={product.name ?? 'Produkt'}
-                  fill // Vyplní kontajner
-                  style={{ objectFit: 'cover' }} // Oreže obrázok, aby vyplnil priestor bez deformácie
-                  sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw" // Optimalizácia pre rôzne veľkosti obrazovky
-                  className="group-hover:scale-105 transition-transform duration-300 ease-in-out" // Efekt pri hoveri
-                />
-              ) : (
-                // Fallback, ak obrázok neexistuje
-                <div className="w-full h-full flex items-center justify-center text-gray-500 bg-gray-200">
-                  Žiadny obrázok
-                </div>
-              )}
-            </div>
-            {/* Detaily produktu pod obrázkom */}
-            <div className="p-4 flex flex-col flex-grow">
-              <h2 className="text-lg font-semibold mb-2 truncate group-hover:text-blue-600 transition-colors">{product.name}</h2>
-              <p className="text-gray-600 mb-3 text-sm line-clamp-2 flex-grow min-h-[40px]">{product.description || "Popis nie je k dispozícii."}</p>
-              <p className="font-bold text-lg mb-3">{product.price ? `${product.price.toFixed(2)} €` : 'Cena neuvedená'}</p>
-              {/* Zobrazenie dostupnosti */}
-              <div className="mb-3">
-                {typeof product.stock === 'number' && product.stock > 0 ? (
-                  <span className="text-xs font-medium px-2.5 py-0.5 rounded bg-green-100 text-green-800">
-                    Skladom ({product.stock} ks)
-                  </span>
-                ) : typeof product.stock === 'number' && product.stock <= 0 ? (
-                  <span className="text-xs font-medium px-2.5 py-0.5 rounded bg-red-100 text-red-800">
-                    Vypredané
-                  </span>
-                ) : (
-                  <span className="text-xs font-medium px-2.5 py-0.5 rounded bg-gray-100 text-gray-800">
-                    Dostupnosť neznáma
-                  </span>
-                )}
-              </div>
-              <div className="mt-auto pt-2 text-blue-600 font-medium text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                Zobraziť Detail
-              </div>
-            </div>
-          </Link>
+          // Použitie nového komponentu ProductCard
+          <ProductCard key={product.id} product={product} />
         ))}
       </div>
     </div>
