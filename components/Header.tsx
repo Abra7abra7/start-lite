@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { Button } from '@/components/ui/button';
 import { redirect } from 'next/navigation';
 import { CartIcon } from './CartIcon'; // Import client component for cart icon
+import { UserCircle2 } from 'lucide-react'; // Import User icon
 
 export async function Header() {
     const supabase = createClient();
@@ -44,13 +45,17 @@ export async function Header() {
                             </form>
                         </div>
                     ) : (
-                        <Link href="/prihlasenie">
-                            <Button variant="outline" size="sm">Prihlásiť sa</Button>
+                        // Show Profile Icon Link when logged out
+                        <Link href="/prihlasenie" passHref>
+                            <Button variant="ghost" size="icon" aria-label="Prihlásiť sa">
+                                <UserCircle2 className="h-6 w-6" />
+                            </Button>
                         </Link>
                     )}
 
-                    {/* Cart Icon (Client Component) */}
+                    {/* Cart Icon - Always visible */}
                     <CartIcon />
+
                 </nav>
             </div>
         </header>

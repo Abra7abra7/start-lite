@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import React from 'react';
+import Link from 'next/link';
 
 export default async function AdminLayout({
   children,
@@ -44,12 +45,15 @@ export default async function AdminLayout({
       {/* TODO: Add Admin Sidebar Navigation */} 
       <aside className="w-64 bg-gray-100 p-4 border-r hidden md:block">
         <h2 className="text-xl font-semibold mb-4">Admin Menu</h2>
-        {/* Placeholder for navigation links */}
-        <ul>
-          <li>Produkty</li>
-          <li>Objednávky (TODO)</li>
-          <li>Používatelia (TODO)</li>
-        </ul>
+        {/* Navigation links */}
+        <nav>
+          <ul className="space-y-2">
+            <li><Link href="/admin/produkty" className="text-gray-700 hover:text-black">Produkty</Link></li>
+            <li><Link href="/admin/objednavky" className="text-gray-700 hover:text-black">Objednávky</Link></li>
+            {/* TODO: Add link for Používatelia when implemented */}
+            {/* <li><Link href="/admin/pouzivatelia" className="text-gray-700 hover:text-black">Používatelia</Link></li> */}
+          </ul>
+        </nav>
       </aside>
       <main className="flex-1 p-6 lg:p-8">
         {/* TODO: Add Admin Header? */} 
