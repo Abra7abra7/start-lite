@@ -1,130 +1,131 @@
-import { NextRequest, NextResponse } from 'next/server';
+// c:\Users\mstancik\Desktop\github\start-lite\app\api\webhooks\stripe\route.ts
+
 import Stripe from 'stripe';
-import { Resend } from 'resend';
-import { render } from '@react-email/render';
-import * as React from 'react'; 
-import OrderConfirmationEmail, { OrderConfirmationEmailProps } from '@/emails/OrderConfirmationEmail';
+import { stripe } from '@/utils/stripe'; // Your initialized Stripe client
+import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js'; // Import standard Supabase client
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    // @ts-expect-error - Persistent type mismatch issue with apiVersion
-    apiVersion: '2025-02-24.acacia', 
-});
+// Define expected environment variables for clarity
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use Service Role Key for admin access
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-// Helper to format currency
-function formatCurrency(amount: number | null | undefined, currency: string | null): string {
-    if (amount === null || amount === undefined || currency === null) return 'N/A';
-    return new Intl.NumberFormat('sk-SK', {
-        style: 'currency',
-        currency: currency.toUpperCase(),
-    }).format(amount / 100);
+// Basic check for environment variables on startup
+if (!STRIPE_WEBHOOK_SECRET) {
+    console.error('*** Stripe webhook secret is missing. Set STRIPE_WEBHOOK_SECRET environment variable.');
+}
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    console.error('*** Supabase URL or Service Role Key is missing. Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables.');
 }
 
-// Helper to format Date
-function formatDate(date: Date): string {
-    return new Intl.DateTimeFormat('sk-SK', {
-        dateStyle: 'long',
-        timeStyle: 'short',
-    }).format(date);
-}
 
-export async function POST(req: NextRequest) {
-    const buf = await req.text();
-    const sig = req.headers.get('stripe-signature');
+export async function POST(req: Request) {
+    // Check if environment variables are set, fail early if not
+    if (!STRIPE_WEBHOOK_SECRET || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+         console.error('Webhook processing failed: Missing environment variables.');
+        return new NextResponse('Webhook configuration error.', { status: 500 });
+    }
+
+    const signature = req.headers.get('stripe-signature');
+    // Important: Need raw body for verification
+    const reqBuffer = await req.arrayBuffer(); // Read request body as buffer
+
+    if (!signature) {
+        console.error('Webhook error: Missing stripe-signature header');
+        return new NextResponse('Missing stripe-signature header', { status: 400 });
+    }
 
     let event: Stripe.Event;
 
     try {
-        if (webhookSecret) {
-            console.log('Webhook secret found, attempting verification...');
-            event = stripe.webhooks.constructEvent(buf, sig!, webhookSecret);
-            console.log('Webhook signature verified.');
-        } 
-        else if (process.env.NODE_ENV === 'development') {
-             console.warn('⚠️ STRIPE_WEBHOOK_SECRET not set. Bypassing signature verification. FOR DEVELOPMENT ONLY! ⚠️');
-             event = JSON.parse(buf) as Stripe.Event;
-        } 
-        else {
-            throw new Error('Stripe webhook secret is not configured for non-development environment.');
-        }
-
-    } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-        console.error(`❌ Error processing webhook: ${errorMessage}`);
-        return NextResponse.json({ error: `Webhook Error: ${errorMessage}` }, { status: 400 });
+        // Verify the event came from Stripe
+        event = stripe.webhooks.constructEvent(
+            Buffer.from(reqBuffer), // Use buffer directly
+            signature,
+            STRIPE_WEBHOOK_SECRET
+        );
+    } catch (err: any) {
+        console.error(`Webhook signature verification failed: ${err.message}`);
+        return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
     }
 
+    // Initialize Supabase Admin Client **inside** the handler
+    // It's generally safer to initialize clients closer to where they are used
+    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Handle the event
     switch (event.type) {
         case 'checkout.session.completed':
             const session = event.data.object as Stripe.Checkout.Session;
-            console.log(`✅ Received checkout.session.completed for session: ${session.id}`);
+            console.log('Webhook received: checkout.session.completed');
+            console.log('Session ID:', session.id);
+            console.log('Metadata:', session.metadata);
 
-            const customerEmail = session.customer_details?.email;
-            const totalAmount = session.amount_total;
-            const currency = session.currency;
-            const customerName = session.customer_details?.name;
-            const orderId = session.id;
-            const orderDate = new Date(session.created * 1000);
+            // Metadata should contain the order ID we passed during session creation
+            const supabaseOrderId = session.metadata?.supabaseOrderId;
 
-            if (!customerEmail) {
-                console.error('❌ Missing customer email in session:', orderId);
-                return NextResponse.json({ received: true, error: 'Missing customer email' });
+            if (!supabaseOrderId) {
+                console.error('Webhook error: supabaseOrderId missing from session metadata.');
+                // Return 200 to Stripe to prevent retries for this specific issue,
+                // but log the error for investigation.
+                return new NextResponse('Missing order ID in metadata.', { status: 200 });
             }
 
+            // Convert ID back to number if your DB expects bigint/number
+            const orderId = parseInt(supabaseOrderId, 10);
+            if (isNaN(orderId)) {
+                 console.error(`Webhook error: Invalid supabaseOrderId format in metadata: ${supabaseOrderId}`);
+                 // Return 200 to prevent retries
+                 return new NextResponse('Invalid order ID format.', { status: 200 });
+            }
+
+            console.log(`Processing order ID: ${orderId}`);
+
             try {
-                const lineItemsResponse = await stripe.checkout.sessions.listLineItems(orderId, {
-                    limit: 50, 
-                });
-                console.log(`Fetched ${lineItemsResponse.data.length} line items for session ${orderId}`);
+                // Update the order status in your database
+                const { error: updateError } = await supabaseAdmin
+                    .from('orders')
+                    .update({
+                        status: 'paid', // Or 'processing', 'completed', etc.
+                        stripe_session_id: session.id // Optionally save the session ID
+                    })
+                    .eq('id', orderId); // Match using the numeric ID
 
-                const formattedLineItems = lineItemsResponse.data.map(item => ({
-                    quantity: item.quantity ?? 0,
-                    description: item.description ?? 'Neznáma položka', 
-                    // Ensure currency passed to formatCurrency is string | null, not undefined
-                    unitPrice: formatCurrency(item.price?.unit_amount, item.price?.currency ?? null),
-                    totalPrice: formatCurrency(item.amount_total, item.currency)
-                }));
-                
-                const emailProps: OrderConfirmationEmailProps = {
-                    customerEmail: customerEmail,
-                    customerName: customerName ?? undefined,
-                    orderId: orderId,
-                    orderDate: formatDate(orderDate),
-                    totalAmount: formatCurrency(totalAmount, currency),
-                    lineItems: formattedLineItems,
-                };
-
-                // Render the email component to HTML string
-                // Using React explicitly here just in case, though render should suffice
-                const emailHtml = await render(React.createElement(OrderConfirmationEmail, emailProps));
-
-                console.log(`Attempting to send confirmation email to ${customerEmail}...`);
-                const { data, error } = await resend.emails.send({
-                    from: 'Objednávky <objednavky@tvojadomena.sk>', 
-                    to: [customerEmail],
-                    subject: `Potvrdenie objednávky č. ${orderId}`,
-                    html: emailHtml,
-                });
-
-                if (error) {
-                    console.error(`❌ Error sending email via Resend:`, error);
-                    return NextResponse.json({ received: true, email_error: error.message });
+                if (updateError) {
+                    console.error(`Supabase update error for order ${orderId}:`, updateError);
+                    // Return 500 to signal Stripe to retry (or handle based on error type)
+                    return new NextResponse(`Failed to update order: ${updateError.message}`, { status: 500 });
                 }
 
-                console.log(`✅ Confirmation email sent successfully to ${customerEmail}. Resend ID: ${data?.id}`);
+                console.log(`Order ${orderId} status updated to 'paid' successfully.`);
+                // TODO: Add any post-payment logic here (e.g., send confirmation email, trigger fulfillment)
 
-            } catch (emailError) {
-                 const message = emailError instanceof Error ? emailError.message : 'Unknown email processing error';
-                console.error(`❌ Failed to process or send confirmation email: ${message}`);
-                return NextResponse.json({ received: true, email_prep_error: message });
+            } catch (dbError: any) {
+                 console.error(`Unexpected database error for order ${orderId}:`, dbError);
+                 return new NextResponse(`Database error: ${dbError.message}`, { status: 500 });
             }
             break;
 
+        // case 'payment_intent.succeeded':
+        //   const paymentIntent = event.data.object;
+        //   // Handle successful payment intent
+        //   break;
+        // case 'payment_intent.payment_failed':
+        //   const paymentIntentFailed = event.data.object;
+        //   // Handle failed payment intent
+        //   break;
+
+        // ... handle other event types as needed
+
         default:
-            console.log(`🤷‍♀️ Unhandled event type ${event.type}`);
+            console.log(`Unhandled webhook event type: ${event.type}`);
     }
 
-    return NextResponse.json({ received: true });
+    // Return a 200 response to acknowledge receipt of the event
+    return new NextResponse(JSON.stringify({ received: true }), { status: 200 });
 }
+
+// Optional: Handle GET requests or other methods if needed, otherwise they default to 405 Method Not Allowed
+// export async function GET(req: Request) {
+//     return new NextResponse('Method Not Allowed', { status: 405 });
+// }
