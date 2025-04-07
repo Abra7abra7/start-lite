@@ -18,105 +18,96 @@ import * as React from 'react';
 export interface OrderConfirmationEmailProps {
     customerName?: string; // Optional customer name if available
     customerEmail: string;
-    orderId: string; // Stripe Session ID
+    orderId: string; // Stripe Session ID or your internal Order ID if preferred
     orderDate: string; // Formatted date
     totalAmount: string; // Formatted total amount with currency
-    lineItems: { 
+    lineItems: {
         quantity: number;
         description: string;
         unitPrice: string; // Formatted unit price with currency
-        totalPrice: string; // Formatted total line price with currency
+        totalPrice: string; // Formatted total price for the line item
     }[];
-    wineryName?: string;
-    wineryAddress?: string; // Optional address
-    wineryLogoUrl?: string; // Optional logo URL
-    storeUrl?: string; // Link back to the store
+    shopName?: string; // Your shop's name
+    shopAddress?: string; // Your shop's address
+    shopUrl?: string; // Link to your shop
+    logoUrl?: string; // URL to your shop's logo
 }
 
-const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : 'http://localhost:3000'; // Adjust if needed
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ? `${process.env.NEXT_PUBLIC_SITE_URL}` : 'http://localhost:3000';
 
-export const OrderConfirmationEmail = ({ 
+export const OrderConfirmationEmail = ({
     customerName,
-    customerEmail,
     orderId,
     orderDate,
     totalAmount,
-    lineItems = [], // Add default value here
-    wineryName = 'Rodinné vinárstvo Pútec', 
-    wineryAddress = 'Pútec 123, 900 01 Vinosady', // Example address
-    wineryLogoUrl = `${baseUrl}/logo.png`, // Example logo path - ADJUST IF NEEDED
-    storeUrl = baseUrl,
+    lineItems,
+    shopName = 'Váš Obchod', // Default shop name
+    shopAddress = 'Vaša Adresa',
+    shopUrl = baseUrl,
+    logoUrl // Optional: Provide URL to your logo
 }: OrderConfirmationEmailProps) => (
     <Html>
         <Head />
-        <Preview>Potvrdenie objednávky č. {orderId} od {wineryName}</Preview>
+        <Preview>Potvrdenie objednávky č. {orderId} z {shopName}</Preview>
         <Body style={main}>
             <Container style={container}>
-                {/* Optional Logo */}
-                {wineryLogoUrl && <Img src={wineryLogoUrl} width="150" height="auto" alt={`${wineryName} Logo`} style={logo} />}
-                
-                <Heading style={heading}>Ďakujeme za vašu objednávku!</Heading>
-                
-                <Text style={paragraph}>
-                    Dobrý deň{customerName ? ` ${customerName}` : ''}, 
+                {logoUrl && (
+                    <Section style={logoContainer}>
+                         <Img src={logoUrl} width="120" height="auto" alt={`${shopName} Logo`} />
+                    </Section>
+                )}
+                <Heading style={h1}>Ďakujeme za Vašu objednávku!</Heading>
+                <Text style={text}>
+Dobrý deň{customerName ? ` ${customerName}` : ''},
                 </Text>
-                <Text style={paragraph}>
-                    Vaša objednávka v {wineryName} bola úspešne prijatá a spracovaná.
+                <Text style={text}>
+                    Ďakujeme za Vašu nedávnu objednávku č. <strong>{orderId}</strong> zo dňa {orderDate} z obchodu {shopName}.
+                    Nižšie nájdete súhrn Vašej objednávky:
                 </Text>
 
-                <Section style={orderInfoSection}>
-                    <Row>
-                        <Column style={orderInfoColumnLeft}><Text style={orderInfoLabel}>Číslo objednávky:</Text></Column>
-                        <Column><Text style={orderInfoValue}>{orderId}</Text></Column>
+                <Section style={tableContainer}>
+                     <Row style={tableHeader}>
+                        <Column style={columnHeader}>Položka</Column>
+                        <Column style={columnHeaderQty}>Množstvo</Column>
+                        <Column style={columnHeaderPrice}>Cena/ks</Column>
+                        <Column style={columnHeaderPriceTotal}>Spolu</Column>
                     </Row>
-                     <Row>
-                        <Column style={orderInfoColumnLeft}><Text style={orderInfoLabel}>Dátum objednávky:</Text></Column>
-                        <Column><Text style={orderInfoValue}>{orderDate}</Text></Column>
-                    </Row>
-                      <Row>
-                        <Column style={orderInfoColumnLeft}><Text style={orderInfoLabel}>Celková suma:</Text></Column>
-                        <Column><Text style={orderInfoValueBold}>{totalAmount}</Text></Column>
-                    </Row>
-                </Section>
-
-                <Hr style={hr} />
-
-                <Heading as="h2" style={subHeading}>Položky objednávky</Heading>
-                
-                <Section>
                     {lineItems.map((item, index) => (
-                        <Row key={index} style={itemRow}>
-                            <Column style={itemQuantity}>{item.quantity}x</Column>
-                            <Column style={itemDescription}>{item.description}</Column>
-                             <Column style={itemPrice}>{item.totalPrice}</Column>
-                             {/* Optional: Show unit price too */}
-                            {/* <Column style={itemPrice}><Text style={unitPriceText}>({item.unitPrice} / ks)</Text></Column> */} 
+                        <Row key={index} style={tableRow}>
+                            <Column style={tableCell}>{item.description}</Column>
+                            <Column style={tableCellQty}>{item.quantity}</Column>
+                            <Column style={tableCellPrice}>{item.unitPrice}</Column>
+                            <Column style={tableCellPriceTotal}>{item.totalPrice}</Column>
                         </Row>
                     ))}
                 </Section>
 
                 <Hr style={hr} />
 
-                 <Text style={paragraph}>Celková suma: <span style={totalAmountFooter}>{totalAmount}</span></Text>
+                <Section style={totalSection}>
+                     <Row>
+                        <Column style={totalLabel}>Celková suma:</Column>
+                        <Column style={totalValue}>{totalAmount}</Column>
+                    </Row>
+                </Section>
 
                 <Hr style={hr} />
 
-                <Text style={paragraph}>
-                    Ak máte akékoľvek otázky, neváhajte nás kontaktovať na <Link href={`mailto:${customerEmail}?subject=Otázka k objednávke ${orderId}`} style={link}>{customerEmail}</Link>.
+                <Text style={text}>
+                    Ak máte akékoľvek otázky, odpovedzte na tento email alebo nás kontaktujte na <Link href={`mailto:info@vasadomena.sk`}>info@vasadomena.sk</Link>. {/* Replace with your actual contact email */}
                 </Text>
-                <Text style={paragraph}>
-                    Ďakujeme za Váš nákup!
-                </Text>
-
-                <Hr style={hr} />
-
                 <Text style={footerText}>
-                    {wineryName}<br />
-                    {wineryAddress && <>{wineryAddress}<br /></>}
-                    <Link href={storeUrl} style={link}>{storeUrl}</Link>
+                    S pozdravom,
+                    <br />
+                    Tím {shopName}
                 </Text>
+
+                <Hr style={hr} />
+                <Section style={footer}>
+                    <Text style={footerTextSmall}>
+                         {shopName} | {shopAddress} | <Link href={shopUrl} style={footerLink}>{shopUrl}</Link>
+                    </Text>
+                </Section>
             </Container>
         </Body>
     </Html>
@@ -124,7 +115,8 @@ export const OrderConfirmationEmail = ({
 
 export default OrderConfirmationEmail;
 
-// Basic Styles (can be customized further)
+// --- Základné štýly --- Styles can be customized further
+
 const main = {
     backgroundColor: '#f6f9fc',
     fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
@@ -133,105 +125,113 @@ const main = {
 
 const container = {
     backgroundColor: '#ffffff',
-    margin: '0 auto',
-    padding: '20px 40px',
-    marginBottom: '64px',
-    border: '1px solid #dfe1e4',
+    border: '1px solid #f0f0f0',
     borderRadius: '8px',
+    margin: '0 auto',
+    padding: '20px',
+    width: '580px',
+    maxWidth: '100%',
 };
 
-const logo = {
-    margin: '0 auto 20px auto',
-};
+const logoContainer = {
+    textAlign: 'center' as const,
+    marginBottom: '20px',
+}
 
-const heading = {
+const h1 = {
+    color: '#1d1c1d',
     fontSize: '28px',
     fontWeight: 'bold',
-    color: '#484848',
+    margin: '30px 0',
+    padding: '0',
     textAlign: 'center' as const,
-    marginBottom: '30px',
 };
 
-const subHeading = {
-     fontSize: '20px',
-    fontWeight: 'bold',
-    color: '#484848',
-    marginTop: '20px',
-     marginBottom: '15px',
-}
-
-const paragraph = {
-    fontSize: '16px',
-    lineHeight: '26px',
-    color: '#484848',
-    marginBottom: '15px',
+const text = {
+    color: '#333',
+    fontSize: '14px',
+    lineHeight: '24px',
+    margin: '16px 0',
 };
-
-const orderInfoSection = {
-    marginTop: '20px',
-    marginBottom: '20px',
-};
-
-const orderInfoColumnLeft = {
-    width: '150px',
-};
-
-const orderInfoLabel = {
-    ...paragraph,
-    fontWeight: 'bold',
-    marginBottom: '5px',
-}
-
-const orderInfoValue = {
-    ...paragraph,
-     marginBottom: '5px',
-}
-
-const orderInfoValueBold = {
-    ...orderInfoValue,
-    fontWeight: 'bold',
-}
 
 const hr = {
-    borderColor: '#dfe1e4',
-    margin: '30px 0',
+    borderColor: '#cccccc',
+    margin: '20px 0',
 };
 
-const itemRow = {
-    marginBottom: '10px',
-}
+const tableContainer = {
+    borderCollapse: 'collapse' as const,
+    width: '100%',
+};
 
-const itemQuantity = {
-    ...paragraph,
-    width: '40px',
+const tableHeader = {
+    backgroundColor: '#f2f2f2',
+};
+
+const columnHeader = {
+    padding: '8px 12px',
+    fontSize: '12px',
+    fontWeight: 'bold',
+    textAlign: 'left' as const,
+    borderBottom: '1px solid #dddddd',
+};
+
+const columnHeaderQty = { ...columnHeader, textAlign: 'center' as const };
+const columnHeaderPrice = { ...columnHeader, textAlign: 'right' as const };
+const columnHeaderPriceTotal = { ...columnHeader, textAlign: 'right' as const };
+
+const tableRow = {
+     borderBottom: '1px solid #eeeeee',
+};
+
+const tableCell = {
+    padding: '8px 12px',
+    fontSize: '14px',
+    textAlign: 'left' as const,
+};
+
+const tableCellQty = { ...tableCell, textAlign: 'center' as const };
+const tableCellPrice = { ...tableCell, textAlign: 'right' as const };
+const tableCellPriceTotal = { ...tableCell, textAlign: 'right' as const };
+
+
+const totalSection = {
+    paddingTop: '10px',
+};
+
+const totalLabel = {
+    fontSize: '14px',
+    fontWeight: 'bold',
     textAlign: 'right' as const,
     paddingRight: '10px',
-}
-
-const itemDescription = {
-     ...paragraph,
-     paddingLeft: '10px',
-}
-
-const itemPrice = {
-    ...paragraph,
-    width: '100px',
-    textAlign: 'right' as const,
-}
-
-const totalAmountFooter = {
-    fontWeight: 'bold',
-}
-
-const footerText = {
-    fontSize: '12px',
-    color: '#8898aa',
-    lineHeight: '15px',
-    textAlign: 'center' as const,
-    marginTop: '30px',
+    width: '80%'
 };
 
-const link = {
-    color: '#007bff', 
+const totalValue = {
+    fontSize: '16px',
+    fontWeight: 'bold',
+    textAlign: 'right' as const,
+};
+
+
+const footer = {
+    marginTop: '20px',
+};
+
+const footerText = {
+    color: '#333',
+    fontSize: '14px',
+    lineHeight: '24px',
+};
+
+const footerTextSmall = {
+    color: '#555',
+    fontSize: '12px',
+    lineHeight: '18px',
+    textAlign: 'center' as const,
+};
+
+const footerLink = {
+    color: '#067df7',
     textDecoration: 'underline',
 };
