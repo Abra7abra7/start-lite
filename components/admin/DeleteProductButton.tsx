@@ -1,14 +1,25 @@
-'use client';
+"use client";
 
 import React from 'react';
 import { useFormState, useFormStatus } from 'react-dom'; 
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { deleteProduct, type DeleteProductState } from "@/app/admin/produkty/actions";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface DeleteProductButtonProps {
     productId: number;
-    productName: string; // Pre potvrdenie
+    productName: string; 
 }
 
 const initialState: DeleteProductState = {
@@ -18,41 +29,50 @@ const initialState: DeleteProductState = {
 
 export function DeleteProductButton({ productId, productName }: DeleteProductButtonProps) {
     const [state, formAction] = useFormState(deleteProduct, initialState);
-
-    const handleDelete = (event: React.FormEvent<HTMLFormElement>) => {
-        if (!confirm(`Naozaj chcete natrvalo zmazať produkt "${productName}"?`)) {
-            event.preventDefault(); 
-        }
-    };
+    const { pending } = useFormStatus(); 
 
     return (
-        <form action={formAction} onSubmit={handleDelete} style={{ display: 'inline-block' }}>
-            <input type="hidden" name="productId" value={productId} />
-            <SubmitButton />
-            {state?.error && <p className="text-red-500 text-xs mt-1">{state.error}</p>}
-            {/* {state?.success && <p className="text-green-500 text-xs mt-1">Produkt zmazaný!</p>} */}
-        </form>
-    );
-}
-
-function SubmitButton() {
-    const { pending } = useFormStatus();
-
-    return (
-        <Button
-            variant="ghost"
-            size="icon"
-            type="submit"
-            className="text-red-500 hover:text-red-700"
-            title="Zmazať"
-            disabled={pending}
-            aria-disabled={pending}
-        >
-            {pending ? (
-                <span className="animate-spin h-4 w-4 border-t-2 border-b-2 border-red-500 rounded-full"></span>
-            ) : (
-                <Trash2 className="h-4 w-4" />
-            )}
-        </Button>
+        <AlertDialog>
+            <AlertDialogTrigger asChild>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-red-500 hover:text-red-700"
+                    title="Zmazať"
+                >
+                    <Trash2 className="h-4 w-4" />
+                </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Naozaj chcete zmazať tento produkt?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        {/* Oprava úvodzoviek pomocou &quot; */}
+                        Produkt &quot;<b>{productName}</b>&quot; bude natrvalo odstránený z databázy, vrátane jeho obrázka. Túto akciu nie je možné vrátiť späť.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Zrušiť</AlertDialogCancel>
+                    <form action={formAction} style={{ display: 'inline-block' }}>
+                        <input type="hidden" name="productId" value={productId} />
+                        <AlertDialogAction asChild>
+                            <Button 
+                                type="submit" 
+                                variant="destructive" 
+                                disabled={pending} 
+                                aria-disabled={pending}
+                            >
+                                {pending ? 'Mažem...' : 'Zmazať natrvalo'}
+                            </Button>
+                        </AlertDialogAction>
+                    </form>
+                </AlertDialogFooter>
+                 {state?.error && (
+                    <p className="text-red-600 text-sm mt-2 p-3 bg-red-50 border border-red-200 rounded">
+                        Chyba: {state.error}
+                    </p>
+                 )}
+            </AlertDialogContent>
+        </AlertDialog>
     );
 }

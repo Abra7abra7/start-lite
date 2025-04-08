@@ -82,7 +82,7 @@ export async function createOrder(
 
         const orderItemsData = cartItems.map(item => ({
             order_id: orderId,
-            product_id: item.id, 
+            product_id: Number(item.id), 
             quantity: item.quantity,
             price_at_purchase: item.price,
             product_name: item.name, 
