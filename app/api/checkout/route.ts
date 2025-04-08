@@ -7,7 +7,7 @@ import { CartItem } from '@/context/CartContext'; // Assuming CartItem definitio
 // The type error might be due to outdated @types/stripe or a specific library version conflict.
 // For now, we keep a recent stable version. If the error persists, we might need to adjust type definitions or library versions.
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2024-06-20', 
+    apiVersion: '2025-03-31.basil', 
     typescript: true,
 });
 
