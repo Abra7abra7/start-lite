@@ -1,57 +1,63 @@
-// Pridané 'use client'
 'use client';
 
 import Link from 'next/link';
 import Image from 'next/image';
-// Importujeme klienta pre browser
-import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
-// Importujeme existujúcu logout akciu
-import { logout } from '@/app/(auth)/actions';
-import { CartIcon } from './CartIcon';
-import { UserCircle2 } from 'lucide-react';
-// Importujeme React hooky
+import { 
+    DropdownMenu, 
+    DropdownMenuContent, 
+    DropdownMenuItem, 
+    DropdownMenuLabel, 
+    DropdownMenuSeparator, 
+    DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { CircleUser, ShoppingCart } from 'lucide-react'; 
+
+import { logout } from '@/app/(auth)/actions'; 
+import { createClient } from '@/lib/supabase/client'; 
 import { useEffect, useState } from 'react';
-import type { User } from '@supabase/supabase-js';
+import type { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 
-// Komponent musí byť 'use client', nemôže byť async
 export function Header() {
-    // Stav na uloženie informácií o používateľovi
     const [user, setUser] = useState<User | null>(null);
-    // Stav na sledovanie načítania
     const [loading, setLoading] = useState(true);
+    const [isAdmin, setIsAdmin] = useState(false); 
 
-    // Načítanie používateľa na strane klienta
     useEffect(() => {
         const supabase = createClient();
-        const getUser = async () => {
-            const { data: { user: currentUser } } = await supabase.auth.getUser();
-            setUser(currentUser);
-            setLoading(false);
-        };
-        getUser();
+        let isMounted = true; 
 
-        // Sledovanie zmien stavu prihlásenia
-        const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-           setUser(session?.user ?? null);
-           // V prípade potreby aktualizujeme loading, aj keď tu už by mal byť false
-           if (loading) setLoading(false);
+        const fetchUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (isMounted) {
+                setUser(user);
+                setLoading(false);
+            }
+        };
+
+        fetchUser();
+
+        const { data: authListener } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
+            if (isMounted) {
+                setUser(session?.user ?? null);
+                if (_event === 'SIGNED_IN' || _event === 'SIGNED_OUT' || _event === 'USER_UPDATED') {
+                    setLoading(true); 
+                    fetchUser(); 
+                }
+            }
         });
 
-        // Cleanup listener pri odmontovaní komponentu
         return () => {
+            isMounted = false;
             authListener?.subscription.unsubscribe();
         };
-    }, [loading]); // Spustíme efekt iba raz na začiatku (a pri zmene loading)
+    }, []); 
 
-    // Zobrazenie počas načítavania (voliteľné)
-     if (loading) {
-         // Môžeme zobraziť jednoduchý skeleton alebo len časť headeru
-         return (
+    if (loading) {
+        return (
             <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                 <div className="container flex h-14 items-center max-w-screen-2xl justify-between">
-                    {/* Logo časť */}
-                     <Link href="/" className="mr-6 flex items-center space-x-2">
+                    <Link href="/" className="mr-6 flex items-center space-x-2">
                         <Image 
                             src="https://jfmssfymrewzbnsbynxd.supabase.co/storage/v1/object/public/product-images/public/logo/logoputec-removebg-preview.png" 
                             alt="Víno Pútec Logo"
@@ -63,10 +69,9 @@ export function Header() {
                             Víno Pútec
                         </span>
                     </Link>
-                    {/* Placeholder pre ikony vpravo */}
                     <div className="flex items-center space-x-4">
-                        <div className="h-8 w-8 bg-muted rounded-full animate-pulse"></div> {/* User icon placeholder */}
-                        <div className="h-8 w-8 bg-muted rounded-full animate-pulse"></div> {/* Cart icon placeholder */}
+                        <div className="h-8 w-8 bg-muted rounded-full animate-pulse"></div> 
+                        <div className="h-8 w-8 bg-muted rounded-full animate-pulse"></div> 
                     </div>
                 </div>
             </header>
@@ -76,44 +81,92 @@ export function Header() {
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container flex h-14 items-center max-w-screen-2xl">
-                {/* TODO: Replace with actual logo */}
                 <Link href="/" className="mr-6 flex items-center space-x-2">
                     <Image 
                         src="https://jfmssfymrewzbnsbynxd.supabase.co/storage/v1/object/public/product-images/public/logo/logoputec-removebg-preview.png" 
                         alt="Víno Pútec Logo"
-                        width={32} // Smaller logo for header
+                        width={32} 
                         height={32}
-                        className="h-8 w-8" // Tailwind classes for size
+                        className="h-8 w-8" 
                     />
                     <span className="font-bold sm:inline-block">
                         Víno Pútec
                     </span>
                 </Link>
 
-                <nav className="flex flex-1 items-center justify-end space-x-4">
-                    {/* TODO: Add main navigation links (Products, About, etc.) later */}
+                <nav className="hidden md:flex flex-1 items-center space-x-6 text-sm font-medium ml-6"> 
+                    <Link href="/o-nas" className="transition-colors hover:text-foreground/80 text-foreground/60">
+                        O Nás
+                    </Link>
+                    <Link href="/produkty" className="transition-colors hover:text-foreground/80 text-foreground/60">
+                        Vína
+                    </Link>
+                    <Link href="/penzion" className="transition-colors hover:text-foreground/80 text-foreground/60">
+                        Ubytovanie
+                    </Link>
+                    <Link href="/degustacie" className="transition-colors hover:text-foreground/80 text-foreground/60">
+                        Degustácie
+                    </Link>
+                    <Link href="/kontakt" className="transition-colors hover:text-foreground/80 text-foreground/60">
+                        Kontakt
+                    </Link>
+                </nav>
+
+                <div className="flex flex-1 items-center justify-end space-x-4">
+                    <div className="md:hidden">
+                        <button className="p-2 rounded-md hover:bg-muted">
+                            <span className="sr-only">Menu</span> 
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                            </svg>
+                        </button>
+                    </div>
 
                     {user ? (
-                        <div className="flex items-center gap-4">
-                             <span className="text-sm hidden sm:inline-block">Ahoj, {user.email}!</span>
-                            {/* Použitie importovanej logout akcie */}
-                            <form action={logout}>
-                                <Button variant="outline" size="sm">Odhlásiť sa</Button>
-                            </form>
+                        <div className="hidden sm:flex items-center gap-4"> 
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="secondary" size="icon" className="rounded-full">
+                                        <CircleUser className="h-5 w-5" />
+                                        <span className="sr-only">Používateľské menu</span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Môj účet</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/profil">Profil</Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/objednavky">Objednávky</Link>
+                                    </DropdownMenuItem>
+                                    {isAdmin && (
+                                        <>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem asChild>
+                                                <Link href="/admin">Administrácia</Link>
+                                            </DropdownMenuItem>
+                                        </>
+                                    )}
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem asChild>
+                                        <form action={logout} className="w-full">
+                                            <button type="submit" className="w-full text-left">Odhlásiť sa</button>
+                                        </form>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
                     ) : (
-                        // Show Profile Icon Link when logged out
-                        <Link href="/prihlasenie" passHref>
-                            <Button variant="ghost" size="icon" aria-label="Prihlásiť sa">
-                                <UserCircle2 className="h-6 w-6" />
-                            </Button>
-                        </Link>
+                        <Button asChild size="sm" className="hidden md:flex"> 
+                            <Link href="/prihlasenie">Prihlásiť sa</Link>
+                        </Button>
                     )}
-
-                    {/* Cart Icon - Always visible */}
-                    <CartIcon />
-
-                </nav>
+                    <Link href="/kosik" className="relative p-2 hover:bg-muted rounded-full">
+                        <ShoppingCart className="h-5 w-5" />
+                        <span className="sr-only">Nákupný košík</span>
+                    </Link>
+                </div>
             </div>
         </header>
     );

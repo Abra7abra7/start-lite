@@ -1,23 +1,20 @@
-"use server"
+// Nepoužívame "use server" pre túto stránku, bude statická
 
-import { Hero } from '@/components/ui/animated-hero'
+// Import nových sekcií
+import { HeroSection } from '@/components/landing/HeroSection';
+import { AboutSection } from '@/components/landing/AboutSection';
+import { ServicesSection } from '@/components/landing/ServicesSection';
+import { ContactSnippetSection } from '@/components/landing/ContactSnippetSection';
 
-export default async function Home() {
-  const heroImageUrl = "https://jfmssfymrewzbnsbynxd.supabase.co/storage/v1/object/public/product-images/public/hero%20(2).webp";
-
+export default function Home() {
   return (
-    // Outer container for background image and overlay
-    <div 
-      className="relative flex min-h-screen flex-col items-center justify-center bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: `url('${heroImageUrl}')` }}
-    >
-      {/* Overlay for better text readability */}
-      <div className="absolute inset-0 bg-black/30 z-0"></div>
-
-      {/* Hero content needs to be above the overlay */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center">
-          <Hero />
-      </div>
+    // Hlavný kontajner stránky
+    <div className="flex flex-col">
+      <HeroSection />
+      <AboutSection />
+      <ServicesSection />
+      <ContactSnippetSection />
+      {/* Tu môžeme neskôr pridať ďalšie sekcie, napr. Odporúčané produkty */}
     </div>
-  )
+  );
 }

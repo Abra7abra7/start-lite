@@ -4,6 +4,7 @@ import localFont from 'next/font/local'
 import { CartProvider } from "@/components/CartProvider";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner"
 import { Header } from "@/components/Header";
+import { Footer } from '@/components/Footer';
 import './globals.css'
 import { usePathname } from 'next/navigation';
 
@@ -35,7 +36,8 @@ export default function RootLayout({
             <main className="flex-1">
               {children}
             </main>
-            {/* TODO: Add Footer later */}
+            <Footer />
+            {/* TODO: Remove this comment later */}
           </div>
           <SonnerToaster richColors position="top-right" />
         </CartProvider>
