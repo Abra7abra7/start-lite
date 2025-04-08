@@ -88,7 +88,8 @@ export default function PokladnaPage() {
       const result = await createOrder(values, cartItems, totalPrice, shippingCost);
 
       if (result.success) {
-        if (result.sessionId) {
+        // Znova použijeme 'in' operátor na bezpečné zúženie typu
+        if ('sessionId' in result) {
           // Platba kartou - presmerovanie na Stripe
           const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
           if (!stripe) {
@@ -100,7 +101,7 @@ export default function PokladnaPage() {
             throw new Error(error.message || 'Nepodarilo sa presmerovať na platobnú bránu.');
           }
           // Košík sa vyčistí až po úspešnej platbe cez webhook
-        } else if (result.orderId) {
+        } else if ('orderId' in result) {
           // Dobierka - úspešne vytvorená
           toast.success("Objednávka bola úspešne vytvorená!");
           clearCart(); // Vyčistiť košík hneď
@@ -519,10 +520,24 @@ export default function PokladnaPage() {
                   </div>
                 ))}
                 <Separator />
-                 {/* TODO: Zobraziť cenu dopravy */}
+                {/* Zobrazenie ceny produktov (medzisúčet) */}
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Medzisúčet</span>
+                  <span>{totalPrice.toFixed(2)} €</span>
+                </div>
+                {/* Zobrazenie ceny dopravy, ak je zvolená */}
+                {shippingCost !== null && (
+                    <div className="flex justify-between text-muted-foreground">
+                        <span>Doprava</span>
+                        <span>{shippingCost.toFixed(2)} €</span>
+                    </div>
+                )}
+                <Separator />
+                {/* Celková suma */} 
                 <div className="flex justify-between font-bold text-lg">
                   <span>Celkom</span>
-                  <span>{totalPrice.toFixed(2)} €</span>
+                  {/* Zobraziť celkovú sumu len ak je doprava vypočítaná */}
+                  <span>{(totalPrice + (shippingCost ?? 0)).toFixed(2)} €</span>
                 </div>
               </div>
             )}

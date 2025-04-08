@@ -190,7 +190,7 @@ export function ProductForm({ mode, initialData }: ProductFormProps) {
 
     // Pridáme ID a starú URL pre editáciu
     if (mode === 'edit' && initialData) {
-      formData.append('productId', initialData.id);
+      formData.append('productId', String(initialData.id)); // Konverzia na string
       if (initialData.image_url) {
         formData.append('oldImageUrl', initialData.image_url);
       }
