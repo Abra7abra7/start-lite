@@ -1,6 +1,9 @@
 // Pridaj 'use client' na začiatok, ak tam nie je,
 // alebo refaktoruj AdminSidebarNav/Item do samostatného client komponentu.
 
+// Vynútenie dynamického renderovania pre celú admin sekciu
+export const dynamic = 'force-dynamic';
+
 import Link from "next/link"; 
 import { Package2 } from "lucide-react"; 
 import { AdminNavItem } from "@/lib/types"; 
