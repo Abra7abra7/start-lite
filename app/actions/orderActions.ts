@@ -1,8 +1,7 @@
 'use server';
 
-import { cookies } from 'next/headers';
-import { createServerClient } from '@supabase/ssr';
-import { Database } from '@/lib/database.types'; 
+import { cookies } from 'next/headers'; 
+import { createClient } from '@supabase/supabase-js';
 import { checkoutFormSchema, CheckoutFormData } from '@/lib/schemas'; 
 import { CartItem } from '@/context/CartContext'; 
 import { getStripeClient } from '@/utils/stripe';
@@ -19,24 +18,15 @@ export async function createOrder(
     orderTotal: number,
     shippingCost: number
 ): Promise<CreateOrderResult> {
-    const cookieStore = cookies();
-    const supabase = createServerClient<Database>(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-            cookies: {
-                get(name: string) {
-                    return cookieStore.get(name)?.value;
-                },
-                set(name: string, value: string, options) {
-                    cookieStore.set({ name, value, ...options });
-                },
-                remove(name: string, options) {
-                    cookieStore.delete({ name, ...options });
-                },
-            },
-        }
-    );
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceRoleKey) {
+        console.error('Supabase URL or Service Role Key is not defined in environment variables.');
+        return { success: false, error: 'Chyba servera pri konfigurácii databázy.' };
+    }
+
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
 
     const validationResult = checkoutFormSchema.safeParse(formData); 
     if (!validationResult.success) {
@@ -49,7 +39,7 @@ export async function createOrder(
     }
 
     try {
-        const { data: orderData, error: orderError } = await supabase
+        const { data: orderData, error: orderError } = await supabaseAdmin
             .from('orders')
             .insert({
                 first_name: formData.firstName,
@@ -88,13 +78,13 @@ export async function createOrder(
             product_name: item.name, 
         }));
 
-        const { error: itemsError } = await supabase
+        const { error: itemsError } = await supabaseAdmin
             .from('order_items')
             .insert(orderItemsData);
 
         if (itemsError) {
             console.error('Supabase order items insert error:', itemsError);
-            await supabase.from('orders').delete().match({ id: orderId });
+            await supabaseAdmin.from('orders').delete().match({ id: orderId });
             return { success: false, error: `Nepodarilo sa uložiť položky objednávky: ${itemsError.message}` };
         }
 
@@ -150,8 +140,8 @@ export async function createOrder(
 
                 if (!session.id) {
                     console.error('Stripe session ID missing after creation');
-                    await supabase.from('order_items').delete().match({ order_id: orderId });
-                    await supabase.from('orders').delete().match({ id: orderId });
+                    await supabaseAdmin.from('order_items').delete().match({ order_id: orderId });
+                    await supabaseAdmin.from('orders').delete().match({ id: orderId });
                     return { success: false, error: 'Nepodarilo sa získať ID platobnej relácie zo Stripe.' };
                 }
 
@@ -160,14 +150,14 @@ export async function createOrder(
 
             } catch (stripeError: unknown) { 
                 console.error('Stripe session creation error:', stripeError);
-                await supabase.from('order_items').delete().match({ order_id: orderId });
-                await supabase.from('orders').delete().match({ id: orderId });
+                await supabaseAdmin.from('order_items').delete().match({ order_id: orderId });
+                await supabaseAdmin.from('orders').delete().match({ id: orderId });
                 const message = stripeError instanceof Error ? stripeError.message : 'Neznáma chyba';
                 return { success: false, error: `Chyba pri vytváraní Stripe platobnej relácie: ${message}` };
             }
         } else {
-            await supabase.from('order_items').delete().match({ order_id: orderId });
-            await supabase.from('orders').delete().match({ id: orderId });
+            await supabaseAdmin.from('order_items').delete().match({ order_id: orderId });
+            await supabaseAdmin.from('orders').delete().match({ id: orderId });
             return { success: false, error: "Neznámy spôsob platby." };
         }
 
