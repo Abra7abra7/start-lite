@@ -70,6 +70,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           return cookieStore.get(name)?.value;
         },
         // Pridáme set a remove pre úplnosť, aj keď ich getUser nepotrebuje
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         set(name: string, value: string, options: any) {
             try {
                 // @ts-expect-error - Supabase SSR helper vyžaduje túto signatúru
@@ -79,6 +80,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 console.debug("Supabase cookie set error (ignored in Server Component)", error);
             }
         },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         remove(name: string, options: any) {
             try {
                  // @ts-expect-error - Supabase SSR helper vyžaduje túto signatúru
