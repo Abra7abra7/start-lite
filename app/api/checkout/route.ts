@@ -1,17 +1,10 @@
 import { NextResponse, NextRequest } from 'next/server';
-import Stripe from 'stripe';
 import { CartItem } from '@/context/CartContext'; // Assuming CartItem definition is here
-
-// Initialize Stripe with the secret key
-// Use the latest API version supported by the stripe-node library
-// The type error might be due to outdated @types/stripe or a specific library version conflict.
-// For now, we keep a recent stable version. If the error persists, we might need to adjust type definitions or library versions.
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2025-03-31.basil', 
-    typescript: true,
-});
+import { getStripeClient } from '@/utils/stripe'; // Import the utility function
 
 export async function POST(req: NextRequest) {
+    const stripe = getStripeClient(); 
+    
     const origin = req.headers.get('origin') || 'http://localhost:3000'; // Get base URL
 
     try {
