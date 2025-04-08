@@ -15,18 +15,7 @@ import { CirclePlus, Pencil } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils'; // Helper for currency formatting
 import { DeleteProductButton } from '@/components/admin/DeleteProductButton'; // Importujeme nový komponent
 import Image from 'next/image';
-
-// Define the type for a product based on your Supabase table
-interface Product {
-  id: string;
-  name: string;
-  description: string | null;
-  price: number;
-  category: string | null;
-  image_url: string | null;
-  created_at: string;
-  // Add other fields as necessary
-}
+import { Product } from '@/types/product'; // Importujeme správny typ
 
 export default async function AdminProductsPage() {
   const supabase = createClient();
