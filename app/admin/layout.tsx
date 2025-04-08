@@ -1,6 +1,11 @@
 // Pridaj 'use client' na začiatok, ak tam nie je,
 // alebo refaktoruj AdminSidebarNav/Item do samostatného client komponentu.
 
+import { cookies } from 'next/headers'; // Import cookies
+import { createServerClient } from '@supabase/ssr'; // Import Supabase SSR helper
+import { redirect } from 'next/navigation'; // Import redirect
+import { Database } from '@/lib/database.types'; // Import Database typu (ak existuje)
+
 // Vynútenie dynamického renderovania pre celú admin sekciu
 export const dynamic = 'force-dynamic';
 
@@ -54,6 +59,56 @@ const navItems: AdminNavItem[] = [
 // Tento komponent NEMÔŽE mať 'use client'
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
 
+  // --- Overenie používateľa a admin role --- 
+  const cookieStore = cookies();
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        // Pridáme set a remove pre úplnosť, aj keď ich getUser nepotrebuje
+        set(name: string, value: string, options: any) {
+            try {
+                // @ts-expect-error - Supabase SSR helper vyžaduje túto signatúru
+                cookieStore.set({ name, value, ...options });
+            } catch (error: unknown) { 
+                // Ignorovať chyby pri nastavovaní cookies v Server Components
+                console.debug("Supabase cookie set error (ignored in Server Component)", error);
+            }
+        },
+        remove(name: string, options: any) {
+            try {
+                 // @ts-expect-error - Supabase SSR helper vyžaduje túto signatúru
+                 cookieStore.set({ name, value: '', ...options });
+            } catch (error: unknown) { 
+                 // Ignorovať chyby pri odstraňovaní cookies v Server Components
+                 console.debug("Supabase cookie remove error (ignored in Server Component)", error);
+            }
+        },
+      },
+    }
+  );
+
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+      console.error("Chyba pri získavaní používateľa alebo používateľ nie je prihlásený:", userError);
+      redirect('/prihlasenie'); // Presmeruj na prihlásenie
+  }
+
+  // Skontroluj, či má používateľ rolu 'admin' v metadátach
+  const isAdmin = user.user_metadata?.role === 'admin';
+
+  if (!isAdmin) {
+      console.warn(`Používateľ ${user.email} nemá admin oprávnenia.`);
+      redirect('/'); // Presmeruj na hlavnú stránku, ak nie je admin
+  }
+  // --- Koniec overenia --- 
+
+  // --- Používateľ je admin, pokračujeme načítaním dát pre layout ---
   // Načítanie skladov pre navigáciu
   let finalNavItems: AdminNavItem[] = [...navItems]; 
   try {

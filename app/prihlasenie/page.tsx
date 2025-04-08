@@ -13,17 +13,26 @@ export default function PrihlaseniePage({ searchParams }: { searchParams: { mess
     const password = formData.get('password') as string
     const supabase = createClient()
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data: signInData, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
 
-    if (error) {
+    if (error || !signInData?.user) { 
       // Redirect back to the Slovak login path
+      console.error("Login error:", error);
       return redirect('/prihlasenie?message=Nepodarilo sa prihlásiť používateľa')
     }
 
-    // Redirect to homepage after successful login
+    // Skontrolujeme rolu používateľa po úspešnom prihlásení
+    const isAdmin = signInData.user.user_metadata?.role === 'admin';
+
+    if (isAdmin) {
+        // Presmeruj admina na admin dashboard
+        return redirect('/admin');
+    }
+
+    // Presmeruj bežného používateľa na hlavnú stránku
     return redirect('/')
   }
 
