@@ -104,17 +104,9 @@ export async function addProduct(
 
     console.log(`Uploading image to Supabase Storage: ${filePath}`);
 
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    await supabase.storage
       .from(bucketName)
       .upload(filePath, imageFile);
-
-    if (uploadError) {
-      console.error('Supabase Storage Upload Error:', uploadError);
-      return {
-        error: `Chyba pri nahrávaní obrázka: ${uploadError.message}`,
-        success: false,
-      };
-    }
 
     // Získanie verejnej URL
     const { data: publicUrlData } = supabase.storage
@@ -201,23 +193,12 @@ export async function updateProduct(
       const bucketName = 'product-images'; 
 
       console.log(`Uploading image to Supabase Storage: ${filePath}`);
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      await supabase.storage
         .from(bucketName)
         .upload(filePath, imageFile, {
           cacheControl: '3600',
           upsert: false,
         });
-
-      if (uploadError) {
-        console.error('Error uploading new image:', uploadError);
-        return { 
-          success: false, 
-          error: `Chyba pri nahrávaní nového obrázka: ${uploadError.message}`,
-          fieldErrors: undefined // Ensure fieldErrors is defined
-        };
-      }
-
-      console.log('Image uploaded successfully to storage:', uploadData);
 
       // Získanie verejnej URL nahraného súboru
       const { data: publicUrlData } = supabase.storage

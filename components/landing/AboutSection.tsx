@@ -4,8 +4,8 @@ import Link from 'next/link';
 import Image from 'next/image'; // Import Image
 
 export const AboutSection = () => {
-    // TODO: Nahradiť URL reálnym obrázkom
-    const aboutImageUrl = "https://via.placeholder.com/500x350.png?text=O+N%C3%A1s+Foto"; 
+    // Nahradenie placeholderu reálnym obrázkom zo Supabase Storage
+    const aboutImageUrl = "https://jfmssfymrewzbnsbynxd.supabase.co/storage/v1/object/public/product-images/public/foto%20web/experience3.png"; 
 
     return (
         <section className="py-16 md:py-24 bg-background" aria-labelledby="about-title">

@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { CirclePlus, Pencil } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils'; // Helper for currency formatting
 import { DeleteProductButton } from '@/components/admin/DeleteProductButton'; // Importujeme nový komponent
+import Image from 'next/image';
 
 // Define the type for a product based on your Supabase table
 interface Product {
@@ -87,7 +88,13 @@ export default async function AdminProductsPage() {
               <TableCell>
                 {/* Basic placeholder for image */}
                 {product.image_url ? (
-                  <img src={product.image_url} alt={product.name} className="h-10 w-10 object-cover rounded" />
+                  <Image 
+                    src={product.image_url} 
+                    alt={product.name} 
+                    width={40} 
+                    height={40} 
+                    className="object-cover rounded" 
+                  />
                 ) : (
                   <div className="h-10 w-10 bg-gray-200 rounded flex items-center justify-center text-xs">Bez obr.</div>
                 )}

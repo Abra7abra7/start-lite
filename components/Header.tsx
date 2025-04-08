@@ -21,7 +21,7 @@ import type { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 export function Header() {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
-    const [isAdmin, setIsAdmin] = useState(false); 
+    const [isAdmin] = useState(false); 
 
     useEffect(() => {
         const supabase = createClient();
@@ -135,10 +135,10 @@ export function Header() {
                                     <DropdownMenuLabel>Môj účet</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem asChild>
-                                        <Link href="/profil">Profil</Link>
+                                        <Link href="/profil">Môj profil</Link>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem asChild>
-                                        <Link href="/objednavky">Objednávky</Link>
+                                        <Link href="/profil/objednavky">Moje objednávky</Link>
                                     </DropdownMenuItem>
                                     {isAdmin && (
                                         <>
@@ -149,9 +149,15 @@ export function Header() {
                                         </>
                                     )}
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem asChild>
+                                    <DropdownMenuItem className="p-0">
                                         <form action={logout} className="w-full">
-                                            <button type="submit" className="w-full text-left">Odhlásiť sa</button>
+                                            <Button 
+                                                type="submit" 
+                                                variant="ghost" 
+                                                className="w-full h-full justify-start px-2 py-1.5 font-normal"
+                                            >
+                                                Odhlásiť sa
+                                            </Button>
                                         </form>
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>

@@ -23,7 +23,7 @@ export function DeleteProductButton({ productId, productName }: DeleteProductBut
   };
 
   return (
-    <form action={deleteProduct as any} onSubmit={handleDelete} style={{ display: 'inline-block' }}> {/* Rýchla oprava typu */}
+    <form action={deleteProduct} onSubmit={handleDelete} style={{ display: 'inline-block' }}> 
       <input type="hidden" name="productId" value={productId} />
       <SubmitButton />
     </form>

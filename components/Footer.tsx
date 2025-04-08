@@ -1,5 +1,6 @@
 import React from 'react';
-import Link from 'next/link';
+// Odstránenie nepoužitého importu Link
+// import Link from 'next/link'; 
 // TODO: Pridať ikony pre sociálne siete, ak budú potrebné (napr. z lucide-react)
 // import { Facebook, Instagram } from 'lucide-react';
 
