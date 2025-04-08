@@ -5,7 +5,7 @@ import { getStripeClient } from '@/utils/stripe'; // Import the utility function
 export async function POST(req: NextRequest) {
     const stripe = getStripeClient(); 
     
-    const origin = req.headers.get('origin') || 'http://localhost:3000'; // Get base URL
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL || 'http://localhost:3000';
 
     try {
         // 1. Get Cart Items from Request Body
@@ -42,8 +42,8 @@ export async function POST(req: NextRequest) {
         });
 
         // 3. Define Success and Cancel URLs (Using Slovak paths)
-        const success_url = `${origin}/objednavka/dakujeme?session_id={CHECKOUT_SESSION_ID}`;
-        const cancel_url = `${origin}/kosik?status=cancelled`; // Back to the cart
+        const success_url = `${siteUrl}/objednavka/dakujeme?session_id={CHECKOUT_SESSION_ID}`;
+        const cancel_url = `${siteUrl}/kosik?status=cancelled`; // Back to the cart
 
         // 4. Create Stripe Checkout Session
         const session = await stripe.checkout.sessions.create({
