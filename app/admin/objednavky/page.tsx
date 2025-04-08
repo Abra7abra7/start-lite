@@ -48,11 +48,17 @@ function getStatusVariant(status: string | null): "default" | "secondary" | "des
 export default async function AdminObjednavkyPage() {
   const supabase = createClient();
 
-  // Fetch orders - selecting specific columns is better practice
-  // TODO: Select only necessary columns and potentially join with customer data if needed
+  // Fetch orders - join with profiles to get customer name
   const { data: orders, error } = await supabase
     .from('orders')
-    .select('*') // Consider selecting specific columns: 'id, created_at, customer_email, total_amount, status'
+    // Pridané pripojenie k profiles na získanie full_name
+    .select(`
+      *,
+      user_id,
+      profiles (
+        full_name
+      )
+    `)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -72,7 +78,8 @@ export default async function AdminObjednavkyPage() {
           <TableRow>
             <TableHead className="w-[100px]">ID</TableHead>
             <TableHead>Dátum</TableHead>
-            <TableHead>Zákazník (Email)</TableHead>
+            {/* Zmenený názov stĺpca */}
+            <TableHead>Zákazník</TableHead>
             <TableHead className="text-right">Suma</TableHead>
             <TableHead>Stav</TableHead>
             {/* Add more heads if needed, e.g., for actions */}
@@ -88,7 +95,15 @@ export default async function AdminObjednavkyPage() {
                 </Link>
               </TableCell>
               <TableCell>{formatDate(order.created_at)}</TableCell>
-              <TableCell>{order.customer_email || 'N/A'}</TableCell> {/* Assuming customer_email exists */}
+              {/* Upravené zobrazenie zákazníka */}
+              <TableCell>
+                {order.profiles?.full_name 
+                  ? order.profiles.full_name 
+                  : order.user_id
+                    ? `User ID: ${order.user_id.substring(0, 8)}...`
+                    : 'Neznámy'
+                }
+              </TableCell>
               <TableCell className="text-right">{formatCurrency(order.total_price)}</TableCell>
               <TableCell>
                  <Badge variant={getStatusVariant(order.status)}>{order.status || 'Neznámy'}</Badge>
