@@ -14,57 +14,105 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-// import { Textarea } from "@/components/ui/textarea"; // Odstránené - nepoužité
 import { useToast } from "@/hooks/use-toast"; // Opravená cesta importu
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-// Import serverovej akcie na vytvorenie skladu
-import { createWarehouse } from '@/app/admin/_actions/warehouseActions';
+// Import serverových akcií
+import { createWarehouse, updateWarehouse } from '@/app/admin/_actions/warehouseActions';
 
+// Definícia typu pre dáta skladu odovzdávané do formulára
+interface WarehouseFormData {
+  id: number;
+  name: string;
+  location: string | null;
+}
+
+// Schéma validácie
 const formSchema = z.object({
   name: z.string().min(2, {
     message: "Názov musí mať aspoň 2 znaky.",
   }),
-  location: z.string().optional(), // Lokácia je nepovinná
-  // description: z.string().optional(), // Prípadný popis
+  location: z.string().optional(),
 });
 
 type WarehouseFormValues = z.infer<typeof formSchema>;
 
-export function WarehouseForm() {
+// Props pre komponent
+interface WarehouseFormProps {
+  warehouseData?: WarehouseFormData; // Nepovinné - pre režim úpravy
+}
+
+export function WarehouseForm({ warehouseData }: WarehouseFormProps) {
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Určenie, či sme v režime úpravy
+  const isEditMode = !!warehouseData;
+
   const form = useForm<WarehouseFormValues>({
     resolver: zodResolver(formSchema),
+    // Nastavenie defaultných hodnôt - buď z warehouseData alebo prázdne
     defaultValues: {
-      name: "",
-      location: "",
+      name: warehouseData?.name || "",
+      location: warehouseData?.location || "",
     },
   });
 
   async function onSubmit(values: WarehouseFormValues) {
     setIsSubmitting(true);
-    console.log("Submitting warehouse form:", values);
+    console.log(`Submitting warehouse form (${isEditMode ? 'edit' : 'create'}):`, values);
 
-    const result = await createWarehouse(values);
+    if (isEditMode) {
+      // Skontrolujeme, či warehouseData a jeho id existujú (pre TypeScript)
+      if (!warehouseData?.id) {
+        console.error("Warehouse ID is missing in edit mode.");
+        toast({
+          title: "Interná chyba formulára",
+          description: "Chýba ID upravovaného skladu.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return; // Ukončíme onSubmit
+      }
 
-    setIsSubmitting(false);
+      const result = await updateWarehouse(warehouseData.id, values);
 
-    if (result.success) {
-      toast({
-        title: "Sklad úspešne vytvorený",
-        description: `Sklad "${values.name}" bol pridaný.`,
-      });
-      router.push('/admin/sklady');
-      router.refresh();
+      setIsSubmitting(false);
+      if (result.success) {
+        toast({
+          title: "Sklad úspešne upravený",
+          description: `Zmeny v sklade "${values.name}" boli uložené.`,
+        });
+        router.push(`/admin/sklady/${warehouseData.id}`); // Návrat na detail skladu
+        router.refresh();
+      } else {
+        toast({
+          title: "Chyba pri úprave skladu",
+          description: result.error || "Neznáma chyba servera.",
+          variant: "destructive",
+        });
+      }
+
     } else {
-      toast({
-        title: "Chyba pri vytváraní skladu",
-        description: result.error || "Neznáma chyba servera.",
-        variant: "destructive",
-      });
+      // Vytvorenie nového skladu (existujúca logika)
+      const result = await createWarehouse(values);
+      setIsSubmitting(false);
+
+      if (result.success) {
+        toast({
+          title: "Sklad úspešne vytvorený",
+          description: `Sklad "${values.name}" bol pridaný.`, // Konkrétnejšia správa
+        });
+        router.push('/admin/sklady'); // Presmerovanie na prehľad
+        router.refresh(); // Obnovenie dát na stránke prehľadu
+      } else {
+        toast({
+          title: "Chyba pri vytváraní skladu",
+          description: result.error || "Neznáma chyba servera.",
+          variant: "destructive",
+        });
+      }
     }
   }
 
@@ -94,6 +142,7 @@ export function WarehouseForm() {
             <FormItem>
               <FormLabel>Lokalita</FormLabel>
               <FormControl>
+                {/* Správne ošetrenie null hodnoty pre input */}
                 <Input placeholder="Napr. Bratislava, Rača" {...field} value={field.value ?? ''} disabled={isSubmitting} />
               </FormControl>
               <FormDescription>
@@ -104,7 +153,9 @@ export function WarehouseForm() {
           )}
         />
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Vytváram..." : "Vytvoriť sklad"}
+          {isSubmitting
+            ? (isEditMode ? "Ukladám..." : "Vytváram...")
+            : (isEditMode ? "Uložiť zmeny" : "Vytvoriť sklad")}
         </Button>
       </form>
     </Form>

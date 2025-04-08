@@ -177,6 +177,66 @@ export async function getWarehouseDetails(warehouseId: number): Promise<{ data: 
   return { data: warehouseDetail, error: null };
 }
 
+// Typ pre dáta vrátené pre jeden sklad
+interface WarehouseData {
+  id: number;
+  name: string;
+  location: string | null;
+  created_at: string; // Prípadne iné potrebné polia
+}
+
+/**
+ * Načíta údaje jedného skladu podľa jeho ID.
+ * @param warehouseId ID skladu
+ */
+export async function getWarehouseById(
+  warehouseId: number
+): Promise<{ data: WarehouseData | null; error: string | null }> {
+  const cookieStore = cookies();
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+      },
+    }
+  );
+
+  // Overenie session
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError || !session) {
+    console.error('Authentication error in getWarehouseById:', sessionError);
+    return { data: null, error: 'Chyba autentifikácie.' };
+  }
+
+  // TODO: Prípadná kontrola oprávnení na čítanie skladu
+
+  // Načítanie dát z databázy
+  const { data, error } = await supabase
+    .from('warehouses')
+    .select('id, name, location, created_at') // Vyber konkrétne polia
+    .eq('id', warehouseId)
+    .single(); // Očakávame práve jeden výsledok
+
+  if (error) {
+    console.error('Error fetching warehouse by ID:', error);
+    if (error.code === 'PGRST116') { // Kód pre "Not found"
+      return { data: null, error: 'Sklad s daným ID nebol nájdený.' };
+    }
+    return { data: null, error: `Nepodarilo sa načítať sklad: ${error.message}` };
+  }
+
+  // Kontrola, či data nie sú null (aj keď single() by mal vrátiť error)
+  if (!data) {
+    return { data: null, error: 'Sklad s daným ID nebol nájdený.' };
+  }
+
+  return { data, error: null };
+}
+
 /**
  * Prijme tovar na sklad. Aktualizuje existujúci záznam alebo vytvorí nový.
  * @param warehouseId ID skladu
@@ -508,6 +568,75 @@ export async function createWarehouse(
     }
     return { success: false, error: `Nepodarilo sa vytvoriť sklad: ${error.message}` };
   }
+
+  return { success: true, error: null };
+}
+
+/**
+ * Aktualizuje údaje existujúceho skladu v databáze.
+ * @param warehouseId ID skladu na aktualizáciu
+ * @param data Nové dáta skladu (názov, lokalita)
+ */
+export async function updateWarehouse(
+  warehouseId: number,
+  data: CreateWarehouseData // Môžeme použiť rovnaký interface ako pre create
+): Promise<{ success: boolean; error: string | null }> {
+  const cookieStore = cookies();
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+      },
+    }
+  );
+
+  // Overenie session
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError || !session) {
+    console.error('Authentication error in updateWarehouse:', sessionError);
+    return { success: false, error: 'Chyba autentifikácie.' };
+  }
+
+  // TODO: Kontrola role (napr. len admin/manager môže upravovať sklady)
+
+  // Validácia dát
+  if (!data.name || data.name.trim().length < 2) {
+    return { success: false, error: 'Názov skladu je povinný a musí mať aspoň 2 znaky.' };
+  }
+  if (isNaN(warehouseId) || warehouseId <= 0) {
+    return { success: false, error: 'Neplatné ID skladu.' };
+  }
+
+  // Príprava dát pre update
+  const warehouseToUpdate = {
+    name: data.name.trim(),
+    location: data.location?.trim() || null,
+    // updated_at sa zvyčajne aktualizuje automaticky triggerom v DB, ak je nastavený
+  };
+
+  // Update v databáze
+  const { error } = await supabase
+    .from('warehouses')
+    .update(warehouseToUpdate)
+    .eq('id', warehouseId);
+
+  if (error) {
+    console.error('Error updating warehouse:', error);
+    if (error.code === '42501') { // RLS chyba
+        return { success: false, error: 'Chyba oprávnení: Nemáte povolenie na úpravu tohto skladu.' };
+    }
+    // Chyba môže nastať aj ak ID neexistuje, aj keď .eq by nemalo vrátiť error, ale 0 rows affected
+    return { success: false, error: `Nepodarilo sa upraviť sklad: ${error.message}` };
+  }
+
+  // V Supabase .update nevracia error ak ID neexistuje, len 0 rows affected.
+  // Ak by sme chceli explicitne overiť, či sa záznam naozaj našiel a upravil,
+  // museli by sme skontrolovať počet ovplyvnených riadkov (čo tento client priamo neposkytuje jednoducho)
+  // alebo načítať záznam znova.
 
   return { success: true, error: null };
 }

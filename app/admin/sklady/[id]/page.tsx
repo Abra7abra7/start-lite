@@ -18,6 +18,9 @@ import {
 import { WarehouseActionsClient } from './_components/WarehouseActionsClient';
 // Import typu pre inventár
 import { InventoryItemWithProduct } from '@/lib/types';
+import { Button } from "@/components/ui/button"; // Import Button
+import Link from "next/link"; // Import Link
+import { Pencil } from "lucide-react"; // Import Pencil
 
 export const dynamic = 'force-dynamic';
 
@@ -59,7 +62,14 @@ export default async function WarehouseDetailPage({ params }: WarehouseDetailPag
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">Detail Skladu: {name}</h1>
+      <div className="flex justify-between items-start">
+        <h1 className="text-2xl font-semibold">Detail Skladu: {name}</h1>
+        <Button variant="outline" asChild>
+          <Link href={`/admin/sklady/${warehouseId}/upravit`}>
+            <Pencil className="mr-2 h-4 w-4" /> Upraviť sklad
+          </Link>
+        </Button>
+      </div>
 
       <Card>
         <CardHeader>

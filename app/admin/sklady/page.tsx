@@ -10,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
+import { Pencil } from "lucide-react"; // Import ikony ceruzky
 
 export default async function WarehousesPage() {
   const { data: warehouses, error } = await getWarehousesOverview();
@@ -65,7 +66,11 @@ export default async function WarehousesPage() {
                 <Button variant="outline" size="sm" asChild>
                    <Link href={`/admin/sklady/${warehouse.id}`}>Detail</Link>
                  </Button>
-                 {/* Prípadne ďalšie akcie ako editácia/mazanie */}
+                 <Button variant="outline" size="sm" asChild title="Upraviť sklad">
+                   <Link href={`/admin/sklady/${warehouse.id}/upravit`}>
+                     <Pencil className="h-4 w-4" />
+                   </Link>
+                 </Button>
               </TableCell>
             </TableRow>
           ))}
