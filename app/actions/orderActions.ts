@@ -1,6 +1,5 @@
 'use server';
 
-import { cookies } from 'next/headers'; 
 import { createClient } from '@supabase/supabase-js';
 import { checkoutFormSchema, CheckoutFormData } from '@/lib/schemas'; 
 import { CartItem } from '@/context/CartContext'; 
