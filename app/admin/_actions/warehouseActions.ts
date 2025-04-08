@@ -1,8 +1,7 @@
 'use server';
 
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
-import { Database } from '@/lib/database.types'; 
+import { createClient } from '@/lib/supabase/server';
+import { revalidatePath } from 'next/cache';
 import { Warehouse, WarehouseDetail, InventoryItemWithProduct } from '@/lib/types';
 
 // Typ pre zjednodušený sklad pre select
@@ -19,27 +18,22 @@ export type WarehouseListItem = {
   created_at: string;
 };
 
+// Typ pre dáta vrátené pre jeden sklad
+interface WarehouseData {
+  id: number;
+  name: string;
+  location: string | null;
+  created_at: string; // Prípadne iné potrebné polia
+}
+
+// Typ pre dáta z formulára pre vytvorenie skladu
+interface CreateWarehouseData {
+  name: string;
+  location?: string | null; // Nepovinné
+}
+
 export async function getWarehouses(): Promise<{ data: Warehouse[] | null; error: string | null }> {
-  const cookieStore = cookies();
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-        // Nasledujúce funkcie set a remove sú potrebné pre server actions,
-        // ktoré by mohli modifikovať session (teraz to nerobíme, ale je dobré ich mať)
-        // set(name: string, value: string, options: CookieOptions) {
-        //   cookieStore.set({ name, value, ...options });
-        // },
-        // remove(name: string, options: CookieOptions) {
-        //   cookieStore.delete({ name, ...options });
-        // },
-      },
-    }
-  );
+  const supabase = createClient();
 
   // Overenie, či je používateľ prihlásený a či má rolu admina (príklad)
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -79,18 +73,7 @@ export async function getWarehouses(): Promise<{ data: Warehouse[] | null; error
  * Získa zoznam všetkých skladov pre prehľadovú stránku.
  */
 export async function getWarehousesOverview(): Promise<{ data: WarehouseListItem[] | null; error: string | null }> {
-  const cookieStore = cookies();
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-      },
-    }
-  );
+  const supabase = createClient();
 
   // Overenie session
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -117,18 +100,7 @@ export async function getWarehousesOverview(): Promise<{ data: WarehouseListItem
 
 // Nová funkcia na načítanie detailov skladu a inventára
 export async function getWarehouseDetails(warehouseId: number): Promise<{ data: WarehouseDetail | null; error: string | null }> {
-  const cookieStore = cookies();
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-      },
-    }
-  );
+  const supabase = createClient();
 
   // Overenie session
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -192,18 +164,7 @@ interface WarehouseData {
 export async function getWarehouseById(
   warehouseId: number
 ): Promise<{ data: WarehouseData | null; error: string | null }> {
-  const cookieStore = cookies();
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-      },
-    }
-  );
+  const supabase = createClient();
 
   // Overenie session
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -253,18 +214,7 @@ export async function receiveStock(
     return { success: false, error: 'Množstvo musí byť kladné číslo.' };
   }
 
-  const cookieStore = cookies();
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-      },
-    }
-  );
+  const supabase = createClient();
 
   // Overenie session
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -341,18 +291,7 @@ export async function receiveStock(
 export async function getOtherWarehousesForSelect(
   currentWarehouseId: number
 ): Promise<{ data: WarehouseSelectItem[] | null; error: string | null }> {
-  const cookieStore = cookies();
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-      },
-    }
-  );
+  const supabase = createClient();
 
   // Session overenie (môže byť redundantné, ak volané z inej overenej akcie, ale pre istotu)
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -398,18 +337,7 @@ export async function transferStock(
     return { success: false, error: 'Zdrojový a cieľový sklad nemôžu byť rovnaké.' };
   }
 
-  const cookieStore = cookies();
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-      },
-    }
-  );
+  const supabase = createClient();
 
   // Overenie session
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -509,10 +437,73 @@ export async function transferStock(
   }
 }
 
-// Typ pre dáta z formulára pre vytvorenie skladu
-interface CreateWarehouseData {
-  name: string;
-  location?: string | null; // Nepovinné
+// --- DELETE WAREHOUSE ---
+export async function deleteWarehouse(warehouseId: number): Promise<{ success: boolean; error: string | null }> {
+  console.log('Attempting to delete warehouse with ID:', warehouseId); // <-- Log ID
+  const supabase = createClient();
+
+  // 1. Check user session
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError || !session) {
+    return { success: false, error: "Authentication required." };
+  }
+
+  // TODO: Re-enable admin role check when implemented
+  // const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
+  // if (profile?.role !== 'admin') {
+  //   return { success: false, error: "Unauthorized." };
+  // }
+
+  try {
+    // 2. Check if warehouse has inventory
+    const { data: inventory, error: inventoryError } = await supabase
+      .from('inventory')
+      .select('*') // Načítaj celý záznam pre lepšie logovanie
+      .eq('warehouse_id', warehouseId)
+      .limit(1);
+
+    // Logovanie výsledku kontroly zásob
+    console.log('Inventory check result for warehouse ID:', warehouseId);
+    console.log('Inventory data:', JSON.stringify(inventory, null, 2));
+    console.log('Inventory error:', inventoryError);
+
+    if (inventoryError) {
+      console.error("Error checking inventory:", inventoryError);
+      return { success: false, error: "Nepodarilo sa skontrolovať zásoby skladu." };
+    }
+
+    console.log('Inventory check passed for warehouse:', warehouseId, 'Proceeding to delete.');
+    if (inventory && inventory.length > 0) {
+      return { success: false, error: "Sklad obsahuje zásoby a nemôže byť odstránený." };
+    }
+
+    // 3. Delete warehouse if empty
+    const { error: deleteError } = await supabase
+      .from('warehouses')
+      .delete()
+      .match({ id: warehouseId });
+
+    if (deleteError) {
+      console.error("Error attempting to delete warehouse:", warehouseId, deleteError);
+      // Check for specific RLS error (adjust based on actual RLS setup)
+      if (deleteError.message.includes('violates row-level security policy')) {
+         return { success: false, error: "Nemáte oprávnenie na odstránenie tohto skladu." };
+      }
+      return { success: false, error: `Nepodarilo sa odstrániť sklad: ${deleteError.message}` };
+    }
+
+    // Logovanie úspešného (z pohľadu kódu) pokusu o mazanie
+    console.log('Supabase delete call completed without error for warehouse:', warehouseId, 'Revalidating paths...');
+    // 4. Revalidate path
+    revalidatePath('/admin/sklady');
+    revalidatePath('/admin'); // Invaliduj aj layout
+
+    return { success: true, error: null };
+
+  } catch (e) {
+    console.error("Unexpected error deleting warehouse:", e);
+    return { success: false, error: "Neočakávaná chyba pri odstraňovaní skladu." };
+  }
 }
 
 /**
@@ -522,18 +513,7 @@ interface CreateWarehouseData {
 export async function createWarehouse(
   data: CreateWarehouseData
 ): Promise<{ success: boolean; error: string | null }> {
-  const cookieStore = cookies();
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-      },
-    }
-  );
+  const supabase = createClient();
 
   // Overenie session
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -581,18 +561,7 @@ export async function updateWarehouse(
   warehouseId: number,
   data: CreateWarehouseData // Môžeme použiť rovnaký interface ako pre create
 ): Promise<{ success: boolean; error: string | null }> {
-  const cookieStore = cookies();
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-      },
-    }
-  );
+  const supabase = createClient();
 
   // Overenie session
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -639,4 +608,36 @@ export async function updateWarehouse(
   // alebo načítať záznam znova.
 
   return { success: true, error: null };
+}
+
+// Nová funkcia na získanie skladov len s ID a menom pre navigáciu
+export async function getWarehousesForNav(): Promise<{
+  data: WarehouseSelectItem[] | null;
+  error: string | null;
+}> {
+  const supabase = createClient();
+
+  // Overenie session - je dôležité, aby sme neukazovali navigáciu neprihláseným?
+  // Ak áno, odkomentovať:
+  /*
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError || !session) {
+    console.error('Authentication error in getWarehousesForNav:', sessionError);
+    return { data: null, error: 'Chyba autentifikácie.' };
+  }
+  */
+  // TODO: Kontrola role?
+
+  // Získanie iba id a name
+  const { data, error } = await supabase
+    .from('warehouses')
+    .select('id, name')
+    .order('name', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching warehouses for nav:', error);
+    return { data: null, error: 'Nepodarilo sa načítať sklady pre navigáciu.' };
+  }
+
+  return { data, error: null };
 }

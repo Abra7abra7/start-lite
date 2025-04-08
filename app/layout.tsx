@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import localFont from 'next/font/local'
 import { CartProvider } from "@/components/CartProvider";
-import { Toaster } from "@/components/ui/sonner"
+import { Toaster as SonnerToaster } from "@/components/ui/sonner"
 import { Header } from "@/components/Header";
 import './globals.css'
 
@@ -37,7 +37,7 @@ export default function RootLayout({
             </main>
             {/* TODO: Add Footer later */}
           </div>
-          <Toaster richColors position="top-right" />
+          <SonnerToaster richColors position="top-right" />
         </CartProvider>
       </body>
     </html>

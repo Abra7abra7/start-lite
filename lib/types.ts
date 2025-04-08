@@ -30,14 +30,6 @@ export type Product = {
   slug: string | null;
   residual_sugar: string | null;
   acid_content: string | null;
-  batch_number: string | null;
-  vineyard_location: string | null;
-  harvest_date: string | null;
-  bottling_date: string | null;
-  awards: string | null;
-  aroma_detail: string | null;
-  taste_detail: string | null;
-  labeled_equivalent_id: number | null; // Pridaný stĺpec
 };
 
 export type Order = {
@@ -46,8 +38,8 @@ export type Order = {
   user_id: string | null;
   total_amount: number;
   status: string;
-  shipping_address: any | null; // JSONB - zvážiť presnejší typ
-  billing_address: any | null; // JSONB - zvážiť presnejší typ
+  shipping_address: Address | null; // Použi typ Address
+  billing_address: Address | null; // Použi typ Address
   payment_intent_id: string | null;
   customer_name: string | null;
   customer_email: string | null;
@@ -115,9 +107,34 @@ export type StockMovement = {
   toWarehouse?: Pick<Warehouse, 'name'>; // Voliteľne
 };
 
+// Typ pre položky v Admin Navigácii
+export type AdminSubNavItem = {
+  href: string;
+  label: string;
+};
+
+export type AdminNavItem = {
+  href: string;
+  label: string;
+  iconName: string; // Zmena z komponentu na názov ikony
+  subItems?: AdminSubNavItem[];
+};
+
 // Typ pre user session (príklad, uprav podľa potreby)
 export type UserSession = {
   id: string;
   email?: string;
   // ... ďalšie polia zo session
 } | null;
+
+// Typ pre adresu (zjednodušený, podľa potreby rozšíriť)
+export type Address = {
+  street?: string;
+  city?: string;
+  postal_code?: string;
+  country?: string;
+  company_name?: string; // Pre firemné údaje
+  ico?: string;
+  dic?: string;
+  ic_dph?: string;
+};

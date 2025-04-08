@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
 import { Pencil } from "lucide-react"; // Import ikony ceruzky
+import { WarehouseDeleteButton } from "./_components/WarehouseDeleteButton"; // Import nového komponentu
 
 export default async function WarehousesPage() {
   const { data: warehouses, error } = await getWarehousesOverview();
@@ -62,15 +63,18 @@ export default async function WarehousesPage() {
               <TableCell>
                 {new Date(warehouse.created_at).toLocaleDateString('sk-SK')} {/* Formátovanie dátumu */}
               </TableCell>
-              <TableCell className="text-right">
-                <Button variant="outline" size="sm" asChild>
-                   <Link href={`/admin/sklady/${warehouse.id}`}>Detail</Link>
-                 </Button>
-                 <Button variant="outline" size="sm" asChild title="Upraviť sklad">
-                   <Link href={`/admin/sklady/${warehouse.id}/upravit`}>
-                     <Pencil className="h-4 w-4" />
-                   </Link>
-                 </Button>
+              <TableCell className="text-right space-x-2"> {/* Pridaný space-x-2 pre medzeru */}
+                {/* Link na úpravu ako ikonkové tlačidlo */}
+                <Button variant="outline" size="icon" asChild title="Upraviť sklad">
+                  <Link href={`/admin/sklady/${warehouse.id}/upravit`}>
+                    <Pencil className="h-4 w-4" />
+                  </Link>
+                </Button>
+                {/* Klientsky komponent pre odstránenie */}
+                <WarehouseDeleteButton 
+                  warehouseId={warehouse.id} 
+                  warehouseName={warehouse.name} 
+                />
               </TableCell>
             </TableRow>
           ))}

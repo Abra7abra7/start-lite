@@ -1,64 +1,91 @@
-import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
-import React from 'react';
-import Link from 'next/link';
+// Pridaj 'use client' na začiatok, ak tam nie je,
+// alebo refaktoruj AdminSidebarNav/Item do samostatného client komponentu.
 
-export default async function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  // --- Authentication & Authorization Check ---
-  const supabase = createClient();
+import Link from "next/link"; 
+import { Package2 } from "lucide-react"; 
+import { AdminNavItem } from "@/lib/types"; 
+import { WarehouseSelectItem, getWarehousesForNav } from "./_actions/warehouseActions"; 
+import { AdminSidebarNav } from "./_components/AdminSidebar"; 
 
-  const { data: { user } } = await supabase.auth.getUser();
+// Definovanie navigačných položiek (statická časť)
+const navItems: AdminNavItem[] = [ 
+  {
+    href: "/admin",
+    label: "Prehľad",
+    iconName: "Home",
+  },
+  {
+    href: "/admin/objednavky",
+    label: "Objednávky",
+    iconName: "ShoppingCart",
+  },
+  {
+    href: "/admin/produkty",
+    label: "Produkty",
+    iconName: "Package",
+  },
+  {
+    href: "/admin/sklady",
+    label: "Sklady",
+    iconName: "Warehouse", 
+    // subItems budú pridané dynamicky
+  },
+  {
+    href: "/admin/pouzivatelia",
+    label: "Používatelia",
+    iconName: "Users",
+  },
+  // Doplniť ďalšie položky podľa potreby
+];
 
-  if (!user) {
-    // Not logged in, redirect to login page (adjust path if needed)
-    return redirect('/prihlasenie?message=Pre prístup do administrácie sa musíte prihlásiť.');
+// --- Samotný Admin Layout (Server Component) ---
+// Tento komponent NEMÔŽE mať 'use client'
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+
+  // Načítanie skladov pre navigáciu
+  let finalNavItems: AdminNavItem[] = [...navItems]; 
+  try {
+    const { data: warehouses, error } = await getWarehousesForNav(); 
+
+    if (error) {
+      console.error("Chyba pri načítaní skladov pre navigáciu:", error);
+    } else if (warehouses) {
+      const warehousesNavItemIndex = finalNavItems.findIndex(item => item.href === "/admin/sklady");
+      if (warehousesNavItemIndex !== -1) {
+        finalNavItems[warehousesNavItemIndex] = {
+          ...finalNavItems[warehousesNavItemIndex],
+          subItems: warehouses.map((warehouse: WarehouseSelectItem) => ({
+            href: `/admin/sklady/${warehouse.id}`,
+            label: warehouse.name,
+          }))
+        };
+        finalNavItems = [...finalNavItems];
+      }
+    }
+  } catch (err: unknown) { 
+    console.error("Neočekávaná chyba pri načítaní skladov:", err);
   }
 
-  /* --- TEMPORARILY COMMENTED OUT FOR DEVELOPMENT ---
-  // TODO: Re-enable role check and ensure profiles table/trigger works before production!
-  // Fetch user profile to check role
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (profileError) {
-    console.error("Error fetching user profile:", profileError);
-    // Handle error appropriately, maybe show an error page or redirect
-    return redirect('/?error=Nepodarilo sa načítať profil používateľa.');
-  }
-
-  if (profile?.role !== 'admin') {
-    // Not an admin, redirect to home page or an unauthorized page
-    return redirect('/?error=Nemáte oprávnenie na prístup do tejto sekcie.');
-  }
-  --- END OF TEMPORARY COMMENT --- */
-
-  // --- Admin Layout Structure ---
   return (
-    <div className="flex min-h-screen">
-      {/* TODO: Add Admin Sidebar Navigation */} 
-      <aside className="w-64 bg-gray-100 p-4 border-r hidden md:block">
-        <h2 className="text-xl font-semibold mb-4">Admin Menu</h2>
-        {/* Navigation links */}
-        <nav>
-          <ul className="space-y-2">
-            <li><Link href="/admin/produkty" className="text-gray-700 hover:text-black">Produkty</Link></li>
-            <li><Link href="/admin/objednavky" className="text-gray-700 hover:text-black">Objednávky</Link></li>
-            {/* TODO: Add link for Používatelia when implemented */}
-            {/* <li><Link href="/admin/pouzivatelia" className="text-gray-700 hover:text-black">Používatelia</Link></li> */}
-          </ul>
-        </nav>
-      </aside>
-      <main className="flex-1 p-6 lg:p-8">
-        {/* TODO: Add Admin Header? */} 
-        {children}
-      </main>
+    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+      <div className="hidden border-r bg-muted/40 md:block">
+        <div className="flex h-full max-h-screen flex-col gap-2">
+          <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+            <Link href="/admin" className="flex items-center gap-2 font-semibold"> 
+              <Package2 className="h-6 w-6" />
+              <span className="">Pútec Admin</span>
+            </Link>
+          </div>
+          <div className="flex-1 overflow-auto py-2">
+            <AdminSidebarNav items={finalNavItems} />
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-col">
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
