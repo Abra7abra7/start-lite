@@ -1,7 +1,7 @@
 // c:\Users\mstancik\Desktop\github\start-lite\app\api\webhooks\stripe\route.ts
 
 import Stripe from 'stripe';
-import { stripe } from '@/utils/stripe'; // Your initialized Stripe client
+import { getStripeClient } from '@/utils/stripe'; // Importujeme funkciu namiesto priamej inštancie
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js'; // Import standard Supabase client
 import { Resend } from 'resend';
@@ -67,6 +67,8 @@ export async function POST(req: Request) {
     let event: Stripe.Event;
 
     try {
+        // Získame Stripe klienta
+        const stripe = getStripeClient();
         event = stripe.webhooks.constructEvent(
             Buffer.from(reqBuffer),
             signature,
@@ -132,6 +134,7 @@ export async function POST(req: Request) {
                         console.log(`Preparing confirmation email for order ${orderId} to ${customerEmail}...`);
                         try {
                              // Fetch line items for the email
+                            const stripe = getStripeClient();
                             const lineItemsResponse = await stripe.checkout.sessions.listLineItems(session.id, {
                                 limit: 50, // Adjust limit as needed
                             });

@@ -5,7 +5,7 @@ import { createServerClient } from '@supabase/ssr';
 import { Database } from '@/lib/database.types'; 
 import { checkoutFormSchema, CheckoutFormData } from '@/lib/schemas'; 
 import { CartItem } from '@/context/CartContext'; 
-import { stripe } from '@/utils/stripe';
+import { getStripeClient } from '@/utils/stripe';
 import Stripe from 'stripe';
 
 type CreateOrderResult = 
@@ -104,6 +104,8 @@ export async function createOrder(
 
         } else if (formData.paymentMethod === 'stripe') { 
             console.log(`Vytváram Stripe session pre objednávku ${orderId}...`);
+
+            const stripe = getStripeClient(); 
 
             const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = cartItems.map(item => ({
                 price_data: {
