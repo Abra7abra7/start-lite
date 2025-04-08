@@ -23,15 +23,15 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { getProductsForSelect, ProductSelectItem } from '@/app/admin/_actions/productActions';
-import { receiveStock, getOtherWarehousesForSelect, WarehouseSelectItem, transferStock } from '@/app/admin/_actions/warehouseActions';
-import { InventoryItemWithProduct } from '@/lib/types'; // Import typu inventára
+import { receiveStock, getOtherWarehousesForSelect, WarehouseSelectItem, transferStock, removeInventoryQuantity } from '@/app/admin/_actions/warehouseActions';
+import { InventoryItemWithProduct } from '@/lib/types'; 
 
 interface WarehouseActionsClientProps {
   warehouseId: number;
-  inventoryData: InventoryItemWithProduct[]; // Pridať prop pre inventár
+  inventoryData: InventoryItemWithProduct[]; 
 }
 
-export function WarehouseActionsClient({ warehouseId, inventoryData }: WarehouseActionsClientProps) { // Prevziať inventoryData
+export function WarehouseActionsClient({ warehouseId, inventoryData }: WarehouseActionsClientProps) { 
   // Stavy pre Príjem tovaru
   const [isReceiveDialogOpen, setIsReceiveDialogOpen] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
@@ -52,6 +52,13 @@ export function WarehouseActionsClient({ warehouseId, inventoryData }: Warehouse
   const [targetWarehouses, setTargetWarehouses] = useState<WarehouseSelectItem[]>([]);
   const [targetWarehousesLoading, setTargetWarehousesLoading] = useState(true);
   const [targetWarehousesError, setTargetWarehousesError] = useState<string | null>(null);
+
+  // Stavy pre Vyskladnenie tovaru
+  const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
+  const [selectedRemoveProductId, setSelectedRemoveProductId] = useState<string | null>(null);
+  const [quantityToRemove, setQuantityToRemove] = useState<number | string>('');
+  const [removeError, setRemoveError] = useState<string | null>(null);
+  const [removeIsLoading, setRemoveIsLoading] = useState(false);
 
   const router = useRouter();
 
@@ -98,7 +105,7 @@ export function WarehouseActionsClient({ warehouseId, inventoryData }: Warehouse
     };
 
     fetchTargetWarehouses();
-  }, [warehouseId]); // Znovu načítať, ak sa zmení warehouseId (teoreticky by nemalo)
+  }, [warehouseId]); 
 
   // Handler pre odoslanie Príjmu
   const handleReceiveSubmit = async () => {
@@ -109,28 +116,25 @@ export function WarehouseActionsClient({ warehouseId, inventoryData }: Warehouse
     }
 
     setIsLoading(true);
-    setError(null); // Vyčistiť predchádzajúce chyby
+    setError(null); 
 
     try {
       const result = await receiveStock(
         warehouseId,
-        parseInt(selectedProductId), // Konvertovať ID produktu na číslo
-        +quantity // Konvertovať množstvo na číslo
+        parseInt(selectedProductId), 
+        +quantity 
       );
 
       if (result.success) {
-        // Úspech
-        setIsReceiveDialogOpen(false); // Zatvoriť dialóg
-        setSelectedProductId(null); // Resetovať formulár
+        setIsReceiveDialogOpen(false); 
+        setSelectedProductId(null); 
         setQuantity('');
-        router.refresh(); // Obnoviť dáta na stránke (znovu načíta inventár)
+        router.refresh(); 
         // TODO: Zobraziť toast notifikáciu o úspechu
       } else {
-        // Chyba vrátená zo server action
         setError(result.error ?? 'Neznáma chyba pri prijímaní tovaru.');
       }
     } catch (err) {
-      // Neočakávaná chyba počas volania server action
       console.error("Neočekávaná chyba pri volaní receiveStock:", err);
       setError('Nastala neočakávaná chyba na strane klienta.');
     }
@@ -141,13 +145,11 @@ export function WarehouseActionsClient({ warehouseId, inventoryData }: Warehouse
   // Handler pre odoslanie Prevodu (zatiaľ len loguje)
   const handleTransferSubmit = async () => {
     setTransferError(null);
-    // Základná validácia
     if (!selectedTransferProductId || !selectedTargetWarehouseId || !transferQuantity || +transferQuantity <= 0) {
       setTransferError('Prosím, vyplňte všetky polia platnými hodnotami.');
       return;
     }
 
-    // Validácia množstva voči aktuálnemu stavu
     const selectedInventoryItem = inventoryData.find(item => String(item.product_id) === selectedTransferProductId);
     if (!selectedInventoryItem || selectedInventoryItem.quantity < +transferQuantity) {
         setTransferError(`Nedostatočné množstvo na sklade (dostupné: ${selectedInventoryItem?.quantity ?? 0}).`);
@@ -158,25 +160,22 @@ export function WarehouseActionsClient({ warehouseId, inventoryData }: Warehouse
     try {
       const result = await transferStock(
         warehouseId,
-        parseInt(selectedTransferProductId), // Konvertovať ID produktu na číslo
-        parseInt(selectedTargetWarehouseId), // Konvertovať ID cieľového skladu na číslo
-        +transferQuantity // Konvertovať množstvo na číslo
+        parseInt(selectedTransferProductId), 
+        parseInt(selectedTargetWarehouseId), 
+        +transferQuantity 
       );
 
       if (result.success) {
-        // Úspech
-        setIsTransferDialogOpen(false); // Zatvoriť dialóg
-        setSelectedTransferProductId(null); // Resetovať formulár
+        setIsTransferDialogOpen(false); 
+        setSelectedTransferProductId(null); 
         setSelectedTargetWarehouseId(null);
         setTransferQuantity('');
-        router.refresh(); // Obnoviť dáta na stránke (znovu načíta inventár)
+        router.refresh(); 
         // TODO: Zobraziť toast notifikáciu o úspechu
       } else {
-        // Chyba vrátená zo server action
         setTransferError(result.error ?? 'Neznáma chyba pri prenose tovaru.');
       }
     } catch (err) {
-      // Neočakávaná chyba počas volania server action
       console.error("Neočekávaná chyba pri volaní transferStock:", err);
       setTransferError('Nastala neočakávaná chyba na strane klienta.');
     }
@@ -184,8 +183,49 @@ export function WarehouseActionsClient({ warehouseId, inventoryData }: Warehouse
     setTransferIsLoading(false);
   };
 
-  // Získanie maximálneho dostupného množstva pre vybraný produkt na prevod
+  // Handler pre odoslanie Vyskladnenia
+  const handleRemoveSubmit = async () => {
+    setRemoveError(null);
+    if (!selectedRemoveProductId || !quantityToRemove || +quantityToRemove <= 0) {
+      setRemoveError('Prosím, vyberte produkt a zadajte platné množstvo.');
+      return;
+    }
+
+    const selectedInventoryItem = inventoryData.find(item => String(item.product_id) === selectedRemoveProductId);
+    if (!selectedInventoryItem || selectedInventoryItem.quantity < +quantityToRemove) {
+        setRemoveError(`Nedostatočné množstvo na sklade (dostupné: ${selectedInventoryItem?.quantity ?? 0}).`);
+        return;
+    }
+
+    setRemoveIsLoading(true);
+    try {
+      const result = await removeInventoryQuantity(
+        warehouseId,
+        parseInt(selectedRemoveProductId), 
+        +quantityToRemove 
+      );
+
+      if (result.success) {
+        setIsRemoveDialogOpen(false);
+        setSelectedRemoveProductId(null);
+        setQuantityToRemove('');
+        router.refresh(); 
+        // TODO: Zobraziť toast notifikáciu o úspechu
+      } else {
+        setRemoveError(result.error ?? 'Neznáma chyba pri vyskladňovaní tovaru.');
+      }
+    } catch (err) {
+      console.error("Neočekávaná chyba pri volaní removeInventoryQuantity:", err);
+      setRemoveError('Nastala neočakávaná chyba na strane klienta.');
+    }
+    setRemoveIsLoading(false);
+  };
+
+  // Získanie maximálneho dostupného množstva pre vybraný produkt na PREVOD
   const maxTransferQuantity = inventoryData.find(item => String(item.product_id) === selectedTransferProductId)?.quantity ?? 0;
+
+  // Získanie maximálneho dostupného množstva pre vybraný produkt na VYSKLADNENIE
+  const maxRemoveQuantity = inventoryData.find(item => String(item.product_id) === selectedRemoveProductId)?.quantity ?? 0;
 
   return (
     <div className="flex gap-2 mt-4">
@@ -282,7 +322,7 @@ export function WarehouseActionsClient({ warehouseId, inventoryData }: Warehouse
                 <SelectContent>
                   {inventoryData.filter(item => item.quantity > 0).length > 0 ? (
                     inventoryData
-                      .filter(item => item.quantity > 0) // Len produkty skladom
+                      .filter(item => item.quantity > 0) 
                       .map((item) => (
                         <SelectItem key={item.product_id} value={String(item.product_id)}>
                           {item.products?.name ?? `Produkt ID: ${item.product_id}`} (Skladom: {item.quantity})
@@ -338,8 +378,8 @@ export function WarehouseActionsClient({ warehouseId, inventoryData }: Warehouse
                 onChange={(e) => setTransferQuantity(e.target.value)}
                 className="col-span-3"
                 min="1"
-                max={maxTransferQuantity > 0 ? maxTransferQuantity : undefined} // Nastaví max atribút
-                disabled={!selectedTransferProductId} // Povolí až po výbere produktu
+                max={maxTransferQuantity > 0 ? maxTransferQuantity : undefined} 
+                disabled={!selectedTransferProductId} 
               />
             </div>
             {/* Zobrazenie dostupného množstva pre informáciu */}
@@ -358,6 +398,86 @@ export function WarehouseActionsClient({ warehouseId, inventoryData }: Warehouse
             </DialogClose>
             <Button type="button" onClick={handleTransferSubmit} disabled={transferIsLoading}>
               {transferIsLoading ? 'Prevádzam...' : 'Potvrdiť prevod'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialóg pre vyskladnenie tovaru */}
+      <Dialog open={isRemoveDialogOpen} onOpenChange={setIsRemoveDialogOpen}>
+        <DialogTrigger asChild>
+          <Button variant="destructive">Vyskladniť tovar</Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Vyskladnenie tovaru zo skladu</DialogTitle>
+            <DialogDescription>
+              Vyberte produkt a zadajte množstvo na vyskladnenie.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            {/* Výber produktu z aktuálneho inventára */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="remove-product" className="text-right">
+                Produkt
+              </Label>
+              <Select
+                onValueChange={setSelectedRemoveProductId}
+                value={selectedRemoveProductId ?? undefined}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Vyberte produkt na vyskladnenie..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {inventoryData.filter(item => item.quantity > 0).length > 0 ? (
+                    inventoryData
+                      .filter(item => item.quantity > 0) 
+                      .map((item) => (
+                        <SelectItem key={item.product_id} value={String(item.product_id)}>
+                          {item.products?.name ?? `Produkt ID: ${item.product_id}`} (Skladom: {item.quantity})
+                        </SelectItem>
+                      ))
+                  ) : (
+                    <SelectItem value="no-stock-remove" disabled>
+                      Žiadne produkty na sklade
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Zadanie množstva */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="remove-quantity" className="text-right">
+                Množstvo
+              </Label>
+              <Input
+                id="remove-quantity"
+                type="number"
+                value={quantityToRemove}
+                onChange={(e) => setQuantityToRemove(e.target.value)}
+                className="col-span-3"
+                min="1"
+                max={maxRemoveQuantity > 0 ? maxRemoveQuantity : undefined} 
+                disabled={!selectedRemoveProductId} 
+              />
+            </div>
+            {/* Zobrazenie dostupného množstva pre informáciu */}
+            {selectedRemoveProductId && (
+              <p className="text-xs text-muted-foreground col-start-2 col-span-3">
+                Dostupné množstvo na vyskladnenie: {maxRemoveQuantity}
+              </p>
+            )}
+
+            {/* Zobrazenie chyby */}
+            {removeError && <p className="text-sm text-destructive col-span-4 text-center">{removeError}</p>}
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">Zrušiť</Button>
+            </DialogClose>
+            <Button type="button" onClick={handleRemoveSubmit} disabled={removeIsLoading} variant="destructive">
+              {removeIsLoading ? 'Vyskladňujem...' : 'Potvrdiť vyskladnenie'}
             </Button>
           </DialogFooter>
         </DialogContent>

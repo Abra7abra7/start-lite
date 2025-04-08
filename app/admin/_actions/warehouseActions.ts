@@ -610,7 +610,80 @@ export async function updateWarehouse(
   return { success: true, error: null };
 }
 
-// Nová funkcia na získanie skladov len s ID a menom pre navigáciu
+/**
+ * Odstráni (vyskladní) zadané množstvo produktu zo skladu.
+ * @param warehouseId ID skladu
+ * @param productId ID produktu
+ * @param quantity Množstvo na odstránenie
+ */
+export async function removeInventoryQuantity(
+  warehouseId: number,
+  productId: number,
+  quantity: number
+): Promise<{ success: boolean; error: string | null }> {
+
+  if (quantity <= 0) {
+    return { success: false, error: 'Množstvo musí byť kladné číslo.' };
+  }
+
+  const supabase = createClient();
+
+  // Overenie session
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError || !session) {
+    return { success: false, error: 'Chyba autentifikácie.' };
+  }
+
+  // TODO: Kontrola role (napr. 'admin' alebo 'skladnik')
+
+  try {
+    // 1. Získať aktuálny stav zásob
+    const { data: currentItem, error: selectError } = await supabase
+      .from('inventory')
+      .select('id, quantity')
+      .eq('warehouse_id', warehouseId)
+      .eq('product_id', productId)
+      .single(); // Očakávame presne jeden záznam
+
+    if (selectError || !currentItem) {
+      console.error('Error finding inventory item or item not found:', selectError);
+      return { success: false, error: 'Produkt sa nenašiel v tomto sklade.' };
+    }
+
+    // 2. Skontrolovať, či je dostatočné množstvo na vyskladnenie
+    if (currentItem.quantity < quantity) {
+      return { success: false, error: `Nedostatočné množstvo na sklade (dostupné: ${currentItem.quantity}).` };
+    }
+
+    // 3. Vypočítať nové množstvo a aktualizovať záznam
+    const newQuantity = currentItem.quantity - quantity;
+    const { error: updateError } = await supabase
+      .from('inventory')
+      .update({ quantity: newQuantity, updated_at: new Date().toISOString() })
+      .eq('id', currentItem.id);
+
+    if (updateError) {
+      console.error('Error updating inventory quantity:', updateError);
+      return { success: false, error: 'Nepodarilo sa aktualizovať stav zásob.' };
+    }
+
+    // TODO: Zvážiť pridanie záznamu do `stock_movements` (typ 'vyskladnenie' alebo 'remove')
+
+    // 4. Revalidovať relevantné stránky (napríklad detail skladu)
+    revalidatePath(`/admin/sklady/${warehouseId}`);
+    revalidatePath('/admin/sklady'); // Aj zoznam, ak tam zobrazujeme súhrnné info
+
+    return { success: true, error: null };
+
+  } catch (e) {
+    console.error('Unexpected error during inventory removal:', e);
+    return { success: false, error: 'Neočakávaná chyba servera pri vyskladňovaní.' };
+  }
+}
+
+/**
+ * Nová funkcia na získanie skladov len s ID a menom pre navigáciu
+ */
 export async function getWarehousesForNav(): Promise<{
   data: WarehouseSelectItem[] | null;
   error: string | null;
