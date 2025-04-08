@@ -1,7 +1,7 @@
 // app/pokladna/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useCart } from '@/context/CartContext';
@@ -30,8 +30,9 @@ import { checkoutFormSchema, type CheckoutFormData } from '@/lib/schemas';
 
 export default function PokladnaPage() {
   const { cartItems, getTotalPrice, clearCart } = useCart();
-  const totalPrice = getTotalPrice();
+  const totalPrice = getTotalPrice(); // Cena len za produkty
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [shippingCost, setShippingCost] = useState<number | null>(null); // Stav pre cenu dopravy
   const router = useRouter();
 
   // 1. Definovanie formulára s použitím importovanej schémy a typu
@@ -57,15 +58,34 @@ export default function PokladnaPage() {
     },
   });
  
+  const deliveryMethodValue = form.watch('deliveryMethod'); // Sledovanie hodnoty pre useEffect
+
+  // Efekt na výpočet ceny dopravy pri zmene spôsobu doručenia
+  useEffect(() => {
+    if (deliveryMethodValue === 'courier') {
+      setShippingCost(5); // Fixná cena za kuriéra
+    } else if (deliveryMethodValue === 'pickup') {
+      setShippingCost(0); // Osobný odber zdarma
+    } else {
+      setShippingCost(null); // Nezvolený spôsob
+    }
+  }, [deliveryMethodValue]);
+
   // 2. Define a submit handler.
   const onSubmit: SubmitHandler<CheckoutFormData> = async (values) => {
     setIsSubmitting(true);
-    // Do something with the form values.
-    // This will be type-safe and validated.
     console.log("Formulár odoslaný:", values);
+    
+    // Overenie, či bola zvolená doprava a vypočítaná cena
+    if (shippingCost === null) {
+        toast.error("Prosím, vyberte spôsob doručenia.");
+        setIsSubmitting(false);
+        return;
+    }
 
     try {
-      const result = await createOrder(values, cartItems, totalPrice);
+      // Pridaný shippingCost ako 4. argument
+      const result = await createOrder(values, cartItems, totalPrice, shippingCost);
 
       if (result.success) {
         if (result.sessionId) {
