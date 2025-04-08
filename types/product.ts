@@ -1,6 +1,6 @@
 // Typ reprezentujúci produkt z databázy
 export interface Product {
-    id: string;
+    id: number;
     created_at: string;
     name: string;
     description: string | null;
