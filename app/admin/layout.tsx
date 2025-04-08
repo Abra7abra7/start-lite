@@ -6,6 +6,9 @@ import { Package2 } from "lucide-react";
 import { AdminNavItem } from "@/lib/types"; 
 import { WarehouseSelectItem, getWarehousesForNav } from "./_actions/warehouseActions"; 
 import { AdminSidebarNav } from "./_components/AdminSidebar"; 
+import { Button } from '@/components/ui/button';
+import { LogOut } from 'lucide-react';
+import { logout } from '@/app/(auth)/actions'; 
 
 // Definovanie navigačných položiek (statická časť)
 const navItems: AdminNavItem[] = [ 
@@ -30,9 +33,15 @@ const navItems: AdminNavItem[] = [
     iconName: "Warehouse", 
     // subItems budú pridané dynamicky
   },
+  // Odstránená pôvodná položka Používatelia
+  // {
+  //   href: '/admin/pouzivatelia',
+  //   label: 'Používatelia',
+  //   iconName: 'Users',
+  // },
   {
-    href: "/admin/pouzivatelia",
-    label: "Používatelia",
+    href: "/admin/zakaznici",
+    label: "Zákazníci",
     iconName: "Users",
   },
   // Doplniť ďalšie položky podľa potreby
@@ -78,6 +87,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </div>
           <div className="flex-1 overflow-auto py-2">
             <AdminSidebarNav items={finalNavItems} />
+          </div>
+          {/* Pridaná sekcia pre odhlásenie na spodok panela */}
+          <div className="mt-auto p-4 border-t">
+             <form action={logout}>
+                <Button variant="ghost" className="w-full justify-start">
+                   <LogOut className="mr-2 h-4 w-4" />
+                    Odhlásiť sa
+                </Button>
+            </form>
           </div>
         </div>
       </div>
