@@ -260,7 +260,8 @@ export async function updateProduct(
   };
 
   // Validujeme bez image_url, keďže ju manažujeme separátne
-  const validatedFields = productActionSchema.omit({ image_url: true }).safeParse(rawFormData); // image_url sa validuje zvlášť
+  // Odstránenie nepotrebného .omit(), keďže schéma už image_url neobsahuje
+  const validatedFields = productActionSchema.safeParse(rawFormData);
 
   if (!validatedFields.success) {
     console.error('Server validation failed (text fields):', validatedFields.error.flatten().fieldErrors);

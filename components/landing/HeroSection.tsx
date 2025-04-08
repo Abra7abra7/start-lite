@@ -1,6 +1,8 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+// Importovanie ikon
+import { Wine, BedDouble, Users } from 'lucide-react';
 
 export const HeroSection = () => {
     // TODO: Nahradiť URL reálnym obrázkom alebo videom
@@ -25,13 +27,21 @@ export const HeroSection = () => {
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Button asChild size="lg">
-                        <Link href="/produkty">Naše Vína</Link>
+                        <Link href="/produkty">
+                            <Wine className="mr-2 h-5 w-5" /> Naše Vína
+                        </Link>
                     </Button>
+                    {/* Zmena variantu späť na secondary, ikona ostáva */}
                     <Button asChild variant="secondary" size="lg">
-                        <Link href="/penzion">Ubytovanie</Link>
+                        <Link href="/penzion">
+                            <BedDouble className="mr-2 h-5 w-5" /> Ubytovanie
+                        </Link>
                     </Button>
+                    {/* Zmena variantu späť na secondary, ikona ostáva */}
                     <Button asChild variant="secondary" size="lg">
-                        <Link href="/degustacie">Degustácie</Link>
+                        <Link href="/degustacie">
+                           <Users className="mr-2 h-5 w-5" /> Degustácie
+                        </Link>
                     </Button>
                 </div>
             </div>
