@@ -73,7 +73,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         set(name: string, value: string, options: any) {
             try {
-                // @ts-expect-error - Supabase SSR helper vyžaduje túto signatúru
+               
                 cookieStore.set({ name, value, ...options });
             } catch (error: unknown) { 
                 // Ignorovať chyby pri nastavovaní cookies v Server Components
@@ -83,7 +83,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         remove(name: string, options: any) {
             try {
-                 // @ts-expect-error - Supabase SSR helper vyžaduje túto signatúru
+               
                  cookieStore.set({ name, value: '', ...options });
             } catch (error: unknown) { 
                  // Ignorovať chyby pri odstraňovaní cookies v Server Components
