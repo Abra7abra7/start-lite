@@ -72,9 +72,10 @@ export async function POST(req: Request) {
             signature,
             STRIPE_WEBHOOK_SECRET
         );
-    } catch (err: any) {
-        console.error(`Webhook signature verification failed: ${err.message}`);
-        return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
+    } catch (err: unknown) { 
+        const errorMessage = (err instanceof Error) ? err.message : 'Unknown error';
+        console.error(`Webhook signature verification failed: ${errorMessage}`);
+        return new NextResponse(`Webhook Error: ${errorMessage}`, { status: 400 });
     }
 
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -174,17 +175,19 @@ export async function POST(req: Request) {
                                 console.log(`✅ Confirmation email sent successfully for order ${orderId}. Resend ID: ${emailData?.id}`);
                             }
 
-                        } catch (emailPrepError: any) {
-                            console.error(`Error preparing or sending email for order ${orderId}:`, emailPrepError);
+                        } catch (emailPrepError: unknown) { 
+                            const errorMessage = (emailPrepError instanceof Error) ? emailPrepError.message : 'Unknown email preparation error';
+                            console.error(`Error preparing or sending email for order ${orderId}:`, errorMessage, emailPrepError);
                             // Log the error but don't fail the webhook
                         }
                     }
                 }
                 // --- End Send Confirmation Email ---
 
-            } catch (dbError: any) {
-                 console.error(`Unexpected database error for order ${orderId}:`, dbError);
-                 return new NextResponse(`Database error: ${dbError.message}`, { status: 500 });
+            } catch (dbError: unknown) { 
+                 const errorMessage = (dbError instanceof Error) ? dbError.message : 'Unknown database error';
+                 console.error(`Unexpected database error for order ${orderId}:`, errorMessage, dbError);
+                 return new NextResponse(`Database error: ${errorMessage}`, { status: 500 });
             }
             break;
 

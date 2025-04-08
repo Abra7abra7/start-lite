@@ -351,13 +351,13 @@ export async function updateProduct(
 
 // Typ pre stav mazania (voliteľné, pre prípad použitia useFormState)
 export type DeleteProductState = {
-  success: boolean;
-  error?: string | null;
+    success: boolean;
+    error?: string;
 };
 
 export async function deleteProduct(
-  // prevState: DeleteProductState, 
-  formData: FormData 
+    prevState: DeleteProductState, 
+    formData: FormData
 ): Promise<DeleteProductState> {
   const supabase = createClient();
   const productId = formData.get('productId') as string;
