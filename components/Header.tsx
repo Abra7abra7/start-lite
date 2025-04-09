@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import React from 'react'; 
 import { Button } from '@/components/ui/button';
 import { 
     DropdownMenu, 
@@ -16,16 +17,33 @@ import {
     HoverCardContent, 
     HoverCardTrigger 
 } from "@/components/ui/hover-card";
-import { CircleUser, ShoppingCart, Minus, Plus, Trash2 } from 'lucide-react'; 
+import { 
+    Sheet, 
+    SheetContent, 
+    SheetHeader, 
+    SheetTitle, 
+    SheetTrigger, 
+    SheetClose 
+} from "@/components/ui/sheet";
+import { 
+    NavigationMenu, 
+    NavigationMenuContent, 
+    NavigationMenuItem, 
+    NavigationMenuLink, 
+    NavigationMenuList, 
+    NavigationMenuTrigger, 
+    navigationMenuTriggerStyle, 
+} from "@/components/ui/navigation-menu"; 
+import { CircleUser, ShoppingCart, Minus, Plus, Trash2, Menu } from 'lucide-react'; 
 import { Separator } from "@/components/ui/separator";
-
+import { cn } from "@/lib/utils"; 
+ 
 import { logout } from '@/app/(auth)/actions'; 
 import { createClient } from '@/lib/supabase/client'; 
 import { useEffect, useState } from 'react';
 import type { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { useCart } from '@/context/CartContext'; 
-
-
+ 
 export function Header() {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
@@ -36,7 +54,7 @@ export function Header() {
     useEffect(() => {
         const supabase = createClient();
         let isMounted = true; 
-
+ 
         const fetchUser = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (isMounted) {
@@ -44,9 +62,9 @@ export function Header() {
                 setLoading(false);
             }
         };
-
+ 
         fetchUser();
-
+ 
         const { data: authListener } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
             if (isMounted) {
                 setUser(session?.user ?? null);
@@ -56,13 +74,13 @@ export function Header() {
                 }
             }
         });
-
+ 
         return () => {
             isMounted = false;
             authListener?.subscription.unsubscribe();
         };
     }, []); 
-
+ 
     if (loading) {
         return (
             <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -87,7 +105,7 @@ export function Header() {
             </header>
         );
     }
-
+ 
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container flex h-14 items-center max-w-screen-2xl">
@@ -103,35 +121,188 @@ export function Header() {
                         Víno Pútec
                     </span>
                 </Link>
-
-                <nav className="hidden md:flex flex-1 items-center space-x-6 text-sm font-medium ml-6"> 
-                    <Link href="/o-nas" className="transition-colors hover:text-foreground/80 text-foreground/60">
+ 
+                <nav className="hidden md:flex flex-1 items-center space-x-1 text-sm font-medium ml-6"> 
+                    {/* --- Desktop Navigácia --- */}
+                    <NavigationMenu>
+                        <NavigationMenuList>
+                            {/* O Nás */}
+                            <NavigationMenuItem>
+                                <Link href="/o-nas" legacyBehavior passHref>
+                                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                                        O Nás
+                                    </NavigationMenuLink>
+                                </Link>
+                            </NavigationMenuItem>
+ 
+                            {/* Vína - Dropdown */}
+                            <NavigationMenuItem>
+                                <NavigationMenuTrigger>Vína</NavigationMenuTrigger>
+                                <NavigationMenuContent>
+                                    <ul className="grid w-[400px] gap-3 p-4 md:w-[200px] lg:w-[250px]">
+                                        <ListItem href="/produkty" title="Všetky vína">
+                                            Zobraziť celú ponuku.
+                                        </ListItem>
+                                        <ListItem href="/produkty?category=biele" title="Biele vína">
+                                            Svieže a elegantné.
+                                        </ListItem>
+                                        <ListItem href="/produkty?category=cervene" title="Červené vína">
+                                            Plné a zamatové.
+                                        </ListItem>
+                                        <ListItem href="/produkty?category=ruzove" title="Ružové vína">
+                                            Ľahké a ovocné.
+                                        </ListItem>
+                                        <ListItem href="/produkty?category=sumive" title="Šumivé vína">
+                                            Oslavné bublinky.
+                                        </ListItem>
+                                    </ul>
+                                </NavigationMenuContent>
+                            </NavigationMenuItem>
+ 
+                            {/* Ostatné linky */}
+                            <NavigationMenuItem>
+                                <Link href="/penzion" legacyBehavior passHref>
+                                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                                        Ubytovanie
+                                    </NavigationMenuLink>
+                                </Link>
+                            </NavigationMenuItem>
+                            <NavigationMenuItem>
+                                <Link href="/degustacie" legacyBehavior passHref>
+                                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                                        Degustácie
+                                    </NavigationMenuLink>
+                                </Link>
+                            </NavigationMenuItem>
+                            <NavigationMenuItem>
+                                <Link href="/kontakt" legacyBehavior passHref>
+                                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                                        Kontakt
+                                    </NavigationMenuLink>
+                                </Link>
+                            </NavigationMenuItem>
+ 
+                        </NavigationMenuList>
+                    </NavigationMenu>
+ 
+                    {/* Pôvodné linky nahradené NavigationMenu vyššie */}
+                    {/* 
                         O Nás
                     </Link>
-                    <Link href="/produkty" className="transition-colors hover:text-foreground/80 text-foreground/60">
+                    <Link href="/produkty" className="transition-colors hover:text-foreground/80 text-foreground/60 px-3 py-2">
                         Vína
                     </Link>
-                    <Link href="/penzion" className="transition-colors hover:text-foreground/80 text-foreground/60">
+                    <Link href="/penzion" className="transition-colors hover:text-foreground/80 text-foreground/60 px-3 py-2">
                         Ubytovanie
                     </Link>
-                    <Link href="/degustacie" className="transition-colors hover:text-foreground/80 text-foreground/60">
+                    <Link href="/degustacie" className="transition-colors hover:text-foreground/80 text-foreground/60 px-3 py-2">
                         Degustácie
                     </Link>
-                    <Link href="/kontakt" className="transition-colors hover:text-foreground/80 text-foreground/60">
+                    <Link href="/kontakt" className="transition-colors hover:text-foreground/80 text-foreground/60 px-3 py-2">
                         Kontakt
                     </Link>
+                    */}
                 </nav>
-
+ 
                 <div className="flex flex-1 items-center justify-end space-x-4">
                     <div className="md:hidden">
-                        <button className="p-2 rounded-md hover:bg-muted">
-                            <span className="sr-only">Menu</span> 
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                            </svg>
-                        </button>
+                        <Sheet>
+                            <SheetTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                    <Menu className="h-6 w-6" />
+                                    <span className="sr-only">Otvoriť menu</span>
+                                </Button>
+                            </SheetTrigger>
+                            <SheetContent side="left">
+                                <SheetHeader>
+                                    <SheetTitle>
+                                        <Link href="/" className="flex items-center space-x-2">
+                                            <Image 
+                                                src="https://jfmssfymrewzbnsbynxd.supabase.co/storage/v1/object/public/product-images/public/logo/logoputec-removebg-preview.png" 
+                                                alt="Víno Pútec Logo"
+                                                width={24} 
+                                                height={24}
+                                                className="h-6 w-6" 
+                                            />
+                                            <span className="font-bold">Víno Pútec</span>
+                                        </Link>
+                                    </SheetTitle>
+                                </SheetHeader>
+                                <Separator className="my-4"/>
+                                <nav className="flex flex-col space-y-3">
+                                    <SheetClose asChild> 
+                                        <Link href="/o-nas" className="text-muted-foreground hover:text-foreground">
+                                            O Nás
+                                        </Link>
+                                    </SheetClose>
+ 
+                                    {/* Vína Kategórie v Mobile Menu */}
+                                    <p className="font-semibold pt-2 pb-1">Vína</p> 
+                                    <SheetClose asChild>
+                                        <Link href="/produkty" className="pl-4 text-muted-foreground hover:text-foreground text-sm">
+                                            › Všetky vína
+                                        </Link>
+                                    </SheetClose>
+                                    <SheetClose asChild>
+                                        <Link href="/produkty?category=biele" className="pl-4 text-muted-foreground hover:text-foreground text-sm">
+                                            › Biele vína
+                                        </Link>
+                                    </SheetClose>
+                                    <SheetClose asChild>
+                                        <Link href="/produkty?category=cervene" className="pl-4 text-muted-foreground hover:text-foreground text-sm">
+                                            › Červené vína
+                                        </Link>
+                                    </SheetClose>
+                                    <SheetClose asChild>
+                                        <Link href="/produkty?category=ruzove" className="pl-4 text-muted-foreground hover:text-foreground text-sm">
+                                            › Ružové vína
+                                        </Link>
+                                    </SheetClose>
+                                    <SheetClose asChild>
+                                        <Link href="/produkty?category=sumive" className="pl-4 text-muted-foreground hover:text-foreground text-sm">
+                                            › Šumivé vína
+                                        </Link>
+                                    </SheetClose>
+ 
+                                    {/* Pôvodný link na Vína nahradený */}
+                                    {/* <SheetClose asChild>
+                                        <Link href="/produkty" className="text-muted-foreground hover:text-foreground">
+                                            Vína
+                                        </Link>
+                                    </SheetClose> */}
+                                    <SheetClose asChild>
+                                        <Link href="/penzion" className="text-muted-foreground hover:text-foreground">
+                                            Ubytovanie
+                                        </Link>
+                                    </SheetClose>
+                                    <SheetClose asChild>
+                                        <Link href="/degustacie" className="text-muted-foreground hover:text-foreground">
+                                            Degustácie
+                                        </Link>
+                                    </SheetClose>
+                                    <SheetClose asChild>
+                                        <Link href="/kontakt" className="text-muted-foreground hover:text-foreground">
+                                            Kontakt
+                                        </Link>
+                                    </SheetClose>
+                                    {user ? (
+                                        <SheetClose asChild>
+                                            <Link href="/profil" className="text-muted-foreground hover:text-foreground">
+                                                Môj profil
+                                            </Link>
+                                        </SheetClose>
+                                    ) : (
+                                        <SheetClose asChild>
+                                            <Link href="/prihlasenie" className="text-muted-foreground hover:text-foreground">
+                                                Prihlásiť sa
+                                            </Link>
+                                        </SheetClose>
+                                    )}
+                                </nav>
+                            </SheetContent>
+                        </Sheet>
                     </div>
-
+ 
                     {user ? (
                         <div className="hidden sm:flex items-center gap-4"> 
                             <DropdownMenu>
@@ -274,3 +445,31 @@ export function Header() {
         </header>
     );
 }
+ 
+const ListItem = React.forwardRef<
+    React.ElementRef<"a">,
+    React.ComponentPropsWithoutRef<"a">
+>(
+    ({ className, title, children, ...props }, ref) => {
+        return (
+            <li>
+                <NavigationMenuLink asChild>
+                    <a
+                        ref={ref}
+                        className={cn(
+                            "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+                            className
+                        )}
+                        {...props}
+                    >
+                        <div className="text-sm font-medium leading-none">{title}</div>
+                        <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                            {children}
+                        </p>
+                    </a>
+                </NavigationMenuLink>
+            </li>
+        )
+    }
+)
+ListItem.displayName = "ListItem"
