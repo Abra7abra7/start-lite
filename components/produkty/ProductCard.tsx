@@ -7,7 +7,9 @@ import { Product } from '@/types/product';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
 import { toast } from 'sonner';
-import { ShoppingCart, Minus, Plus } from 'lucide-react'; // Import ikon
+import { ShoppingCart, Minus, Plus } from 'lucide-react';
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface ProductCardProps {
   product: Product;
@@ -15,7 +17,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCart();
-  const [quantity, setQuantity] = useState(1); // Stav pre množstvo
+  const [quantity, setQuantity] = useState(1);
 
   const handleAddToCart = () => {
     const itemToAdd = {
@@ -44,7 +46,12 @@ export function ProductCard({ product }: ProductCardProps) {
 
   const incrementQuantity = () => {
     const maxStock = typeof product.stock === 'number' ? product.stock : Infinity;
-    setQuantity(prev => Math.min(prev + 1, maxStock));
+    // Uistíme sa, že neprekročíme maxStock, ak je definovaný
+    if (typeof product.stock === 'number') {
+        setQuantity(prev => Math.min(prev + 1, maxStock));
+    } else {
+        setQuantity(prev => prev + 1);
+    }
   };
 
   const decrementQuantity = () => {
@@ -52,112 +59,104 @@ export function ProductCard({ product }: ProductCardProps) {
   };
 
   const isOutOfStock = typeof product.stock === 'number' && product.stock <= 0;
-  const canIncreaseQuantity = quantity < (typeof product.stock === 'number' ? product.stock : Infinity);
+  // Zmena: Kontrola, či je aktuálne množstvo MENŠIE ako zásoba
+  const canIncreaseQuantity = typeof product.stock !== 'number' || quantity < product.stock;
+  const stockAvailable = typeof product.stock === 'number' ? product.stock : null;
 
   return (
-    <div className="group border rounded-lg overflow-hidden shadow hover:shadow-lg transition-shadow duration-300 ease-in-out flex flex-col transform hover:-translate-y-1 bg-white">
-      {/* Obrázok produktu - Link na detail */}
-      <Link href={`/produkty/${product.id}`} className="block">
-        <div className="relative w-full h-48 overflow-hidden">
-          {product.image_url ? (
-            <Image
-              src={product.image_url}
-              alt={product.name ?? 'Produkt'}
-              fill
-              style={{ objectFit: 'cover' }}
-              sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              className="group-hover:scale-105 transition-transform duration-300 ease-in-out"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-500 bg-gray-200">
-              Žiadny obrázok
-            </div>
-          )}
-        </div>
-      </Link>
-
-      {/* Detaily produktu pod obrázkom */}
-      <div className="p-4 flex flex-col flex-grow">
-        <h2 className="text-lg font-semibold mb-1 truncate">
-          {/* Názov produktu - Link na detail */}
-          <Link href={`/produkty/${product.id}`} className="hover:text-blue-600 transition-colors">
-            {product.name}
-          </Link>
-        </h2>
-        {/* Krátky popis - voliteľne */}
-        {/* <p className="text-gray-600 mb-3 text-sm line-clamp-2 flex-grow min-h-[40px]">{product.description || ""}</p> */}
-        <p className="font-semibold text-base mb-2">{product.price ? `${product.price.toFixed(2)} €` : 'Cena neuvedená'}</p>
-
-        {/* Zobrazenie dostupnosti */}
-        <div className="mb-4 text-xs font-medium">
-          {typeof product.stock === 'number' && product.stock > 0 ? (
-            <span className="px-2.5 py-0.5 rounded bg-green-100 text-green-800">
-              Skladom ({product.stock} ks)
-            </span>
-          ) : isOutOfStock ? (
-            <span className="px-2.5 py-0.5 rounded bg-red-100 text-red-800">
-              Vypredané
-            </span>
-          ) : (
-            <span className="px-2.5 py-0.5 rounded bg-gray-100 text-gray-800">
-              Dostupnosť neznáma
-            </span>
-          )}
-        </div>
-
-        {/* --- Kontajner pre Množstvo a Tlačidlá --- */}
-        <div className="mt-auto pt-2">
-          {/* --- Horný riadok: Množstvo + Pridať do košíka --- */}
-          <div className="flex items-center gap-2 mb-2">
-            {/* --- Tlačidlo Pridať do košíka (teraz vľavo) --- */}
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className={`flex-grow ${!isOutOfStock && product.price !== null ? '' : 'w-full'}`} // Stále flex-grow
-              onClick={handleAddToCart}
-              disabled={isOutOfStock || product.price === null}
-            >
-              <ShoppingCart className="mr-2 h-4 w-4" />
-              {isOutOfStock ? 'Vypredané' : 'Do košíka'}
-            </Button>
-            {/* --- Výber Množstva (teraz vpravo) --- */}
-            {!isOutOfStock && product.price !== null && (
-              <div className="flex items-center justify-center gap-1.5 shrink-0">
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  onClick={decrementQuantity} 
-                  disabled={quantity <= 1}
-                  aria-label="Znížiť množstvo"
-                  className="h-8 w-8"
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <span className="font-medium text-base text-center w-8 tabular-nums px-1" aria-live="polite">{quantity}</span>
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  onClick={incrementQuantity} 
-                  disabled={isOutOfStock || !canIncreaseQuantity}
-                  aria-label="Zvýšiť množstvo"
-                  className="h-8 w-8"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
+    <Card className="flex flex-col overflow-hidden h-full group border rounded-lg shadow hover:shadow-lg transition-shadow duration-300 ease-in-out transform hover:-translate-y-1 bg-white">
+      <CardHeader className="p-0 relative"> {/* Pridané relative pre prípadné absolútne prvky nad obrázkom */} 
+        <Link href={`/produkty/${product.id}`} className="block">
+          <div className="relative w-full aspect-square overflow-hidden">
+            {product.image_url ? (
+              <Image
+                src={product.image_url}
+                alt={product.name ?? 'Produkt'}
+                fill
+                style={{ objectFit: 'cover' }}
+                sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                className="group-hover:scale-105 transition-transform duration-300 ease-in-out"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-500 bg-gray-200">
+                Žiadny obrázok
               </div>
             )}
           </div>
-
-          {/* --- Dolný riadok: Detail --- */}
-          <div className="mt-2"> 
-            <Link href={`/produkty/${product.id}`} className="flex-1">
-              <Button variant="secondary" size="sm" className="w-full">
-                Detail
-              </Button>
-            </Link>
-          </div>
+        </Link>
+      </CardHeader>
+      <CardContent className="p-4 flex flex-col flex-grow">
+        <Link href={`/produkty/${product.id}`} className="block mb-2">
+          <h3 className="font-semibold text-lg line-clamp-2 min-h-[2.5em] hover:text-primary transition-colors">
+            {product.name}
+          </h3>
+        </Link>
+        <p className="text-xl font-bold mb-2">{product.price ? `${product.price.toFixed(2)} €` : 'Cena neuvedená'}</p>
+        <div className="mb-3"> 
+          {isOutOfStock ? (
+            <Badge variant="destructive">Vypredané</Badge>
+          ) : stockAvailable !== null ? (
+            <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-200">Skladom ({stockAvailable} ks)</Badge>
+          ) : (
+            <Badge variant="secondary">Dostupnosť neznáma</Badge>
+          )}
         </div>
-      </div>
-    </div>
+        {/* Miesto pre krátky popis, ak je potrebný */} 
+        {/* <p className="text-sm text-gray-600 line-clamp-3 flex-grow">{product.description}</p> */} 
+      </CardContent>
+      <CardFooter className="p-4 pt-0 mt-auto flex flex-col gap-2 border-t border-gray-100">
+
+        {/* Riadok 1: Množstvo a Košík (alebo Vypredané) */} 
+        <div className="flex items-center justify-between w-full gap-2">
+          {isOutOfStock ? (
+            <Button variant="outline" disabled className="w-full cursor-not-allowed">Vypredané</Button>
+          ) : (
+            <>
+              {/* Kompaktný counter množstva */} 
+              <div className="flex items-center border rounded-md shrink-0">
+                 <Button 
+                   variant="ghost" 
+                   size="icon" 
+                   className="h-8 w-8 rounded-r-none" 
+                   onClick={decrementQuantity} 
+                   disabled={quantity <= 1}
+                   aria-label="Znížiť množstvo"
+                 > 
+                   <Minus size={16}/> 
+                 </Button>
+                 <span className="px-3 text-sm font-medium tabular-nums" aria-live="polite">{quantity}</span>
+                 <Button 
+                   variant="ghost" 
+                   size="icon" 
+                   className="h-8 w-8 rounded-l-none" 
+                   onClick={incrementQuantity} 
+                   disabled={!canIncreaseQuantity}
+                   aria-label="Zvýšiť množstvo"
+                 > 
+                   <Plus size={16}/> 
+                 </Button>
+              </div>
+              {/* Tlačidlo Do košíka */} 
+              <Button 
+                size="sm" 
+                onClick={handleAddToCart} 
+                disabled={product.price === null} 
+                className="flex-grow min-w-[80px]"
+                aria-label="Pridať do košíka"
+              >
+                <ShoppingCart size={16} className="mr-1 sm:mr-2"/>
+                <span className="hidden sm:inline">Do košíka</span>
+              </Button>
+            </>
+          )}
+        </div>
+
+        {/* Riadok 2: Detail */} 
+        <Link href={`/produkty/${product.id}`} className="w-full">
+           <Button variant="secondary" className="w-full">Detail produktu</Button>
+        </Link>
+
+      </CardFooter>
+    </Card>
   );
 }

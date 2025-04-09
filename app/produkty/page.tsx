@@ -115,7 +115,8 @@ export default async function ProduktyPage({ searchParams }: ProduktyPageProps) 
         <CategoryFilter categories={uniqueCategories} currentCategory={categoryParam} />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full">
+      {/* Zmena: Znížený počet stĺpcov na md a lg pre širšie karty */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
         {products.map((product) => (
           // Použitie nového komponentu ProductCard
           <ProductCard key={product.id} product={product} />

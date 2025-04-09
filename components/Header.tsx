@@ -17,11 +17,14 @@ import { logout } from '@/app/(auth)/actions';
 import { createClient } from '@/lib/supabase/client'; 
 import { useEffect, useState } from 'react';
 import type { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
+import { useCart } from '@/context/CartContext';
 
 export function Header() {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [isAdmin] = useState(false); 
+    const { getItemCount } = useCart();
+    const totalItems = getItemCount();
 
     useEffect(() => {
         const supabase = createClient();
@@ -171,6 +174,11 @@ export function Header() {
                     <Link href="/kosik" className="relative p-2 hover:bg-muted rounded-full">
                         <ShoppingCart className="h-5 w-5" />
                         <span className="sr-only">Nákupný košík</span>
+                        {totalItems > 0 && (
+                            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-xs font-medium text-white">
+                                {totalItems}
+                            </span>
+                        )}
                     </Link>
                 </div>
             </div>
