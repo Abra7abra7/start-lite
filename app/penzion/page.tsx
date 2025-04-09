@@ -74,7 +74,7 @@ export default function PenzionPage() {
                     viewport={{ once: true, amount: 0.3 }} // Animácia sa spustí raz, keď je 30% sekcie viditeľných
                     variants={sectionVariants}
                 >
-                    <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-gray-800 dark:text-white">
+                    <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-primary">
                         Vitajte v Penzione Pútec
                     </h1>
                     <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
@@ -90,33 +90,33 @@ export default function PenzionPage() {
                     viewport={{ once: true, amount: 0.3 }}
                     variants={sectionVariants}
                 >
-                    <h2 className="text-2xl md:text-3xl font-semibold mb-8 text-center text-gray-800 dark:text-white">Objavujte Malé Karpaty</h2>
+                    <h2 className="text-2xl md:text-3xl font-semibold mb-8 text-center text-primary/90">Objavujte Malé Karpaty</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 max-w-5xl mx-auto">
                         <div className="flex items-start space-x-4">
                             <Bike className="h-8 w-8 text-putec-primary flex-shrink-0 mt-1" />
                             <div>
-                                <h3 className="font-semibold mb-1 text-gray-800 dark:text-white">Cyklotrasy</h3>
+                                <h3 className="font-semibold mb-1 text-primary/80">Cyklotrasy</h3>
                                 <p className="text-sm text-muted-foreground">Množstvo značených trás pre cestné aj horské bicykle priamo od penziónu.</p>
                             </div>
                         </div>
                         <div className="flex items-start space-x-4">
                             <MountainSnow className="h-8 w-8 text-putec-primary flex-shrink-0 mt-1" /> 
                             <div>
-                                <h3 className="font-semibold mb-1 text-gray-800 dark:text-white">Turistika</h3>
+                                <h3 className="font-semibold mb-1 text-primary/80">Turistika</h3>
                                 <p className="text-sm text-muted-foreground">Výlety na Zochovu chatu, Veľkú Homolu (s rozhľadňou) či potulky vinohradmi.</p>
                             </div>
                         </div>
                         <div className="flex items-start space-x-4">
                             <Castle className="h-8 w-8 text-putec-primary flex-shrink-0 mt-1" />
                             <div>
-                                <h3 className="font-semibold mb-1 text-gray-800 dark:text-white">Hrady a Kultúra</h3>
+                                <h3 className="font-semibold mb-1 text-primary/80">Hrady a Kultúra</h3>
                                 <p className="text-sm text-muted-foreground">Navštívte Červený Kameň, Smolenický zámok alebo historické centrum Pezinka.</p>
                             </div>
                         </div>
                         <div className="flex items-start space-x-4">
                             <MapPin className="h-8 w-8 text-putec-primary flex-shrink-0 mt-1" />
                             <div>
-                                <h3 className="font-semibold mb-1 text-gray-800 dark:text-white">Vínna Cesta</h3>
+                                <h3 className="font-semibold mb-1 text-primary/80">Vínna Cesta</h3>
                                 <p className="text-sm text-muted-foreground">Nachádzate sa priamo na Malokarpatskej vínnej ceste plnej lokálnych vinárstiev.</p>
                             </div>
                         </div>
@@ -131,7 +131,7 @@ export default function PenzionPage() {
                     viewport={{ once: true, amount: 0.2 }}
                     variants={sectionVariants}
                 >
-                    <h2 className="text-2xl md:text-3xl font-semibold mb-4 text-center text-gray-800 dark:text-white">Naše Ubytovanie vo Vinosadoch</h2>
+                    <h2 className="text-2xl md:text-3xl font-semibold mb-4 text-center text-primary/90">Naše Ubytovanie vo Vinosadoch</h2>
                     <p className="text-center text-muted-foreground max-w-3xl mx-auto mb-10"> 
                         Ponúkame komfortné ubytovanie v Penzióne Pútec s celkovou kapacitou pre 15 osôb, ideálne pre rodinné dovolenky, partie priateľov či menšie skupiny objavujúce krásy Malých Karpát. Užite si súkromie a pohodlie v srdci vinárskeho regiónu.
                     </p>
@@ -142,7 +142,7 @@ export default function PenzionPage() {
                             <div className="flex items-center mb-3">
                                 <BedDouble className="h-6 w-6 mr-3 text-putec-primary" />
                                 <BedSingle className="h-6 w-6 mr-3 text-putec-primary" />
-                                <h3 className="text-xl font-semibold text-gray-800 dark:text-white">Typy Izbieb</h3>
+                                <h3 className="text-xl font-semibold text-primary/80">Typy Izbieb</h3>
                             </div>
                             <p className="text-muted-foreground mb-4">
                                 K dispozícii máme celkovo šesť moderne zariadených izieb:
@@ -165,7 +165,7 @@ export default function PenzionPage() {
                         <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 bg-card dark:bg-gray-800 shadow-sm">
                             <div className="flex items-center mb-3">
                                 <CookingPot className="h-6 w-6 mr-3 text-putec-primary" />
-                                <h3 className="text-xl font-semibold text-gray-800 dark:text-white">Spoločná Kuchyňa</h3>
+                                <h3 className="text-xl font-semibold text-primary/80">Spoločná Kuchyňa</h3>
                             </div>
                             <p className="text-muted-foreground">
                                 Všetkým našim hosťom je plne k dispozícii priestranná a moderne vybavená spoločná kuchyňa. Nájdete v nej všetko potrebné na prípravu vlastných jedál, od raňajok až po večeru, alebo len na posedenie pri káve.
@@ -185,7 +185,7 @@ export default function PenzionPage() {
                     viewport={{ once: true, amount: 0.2 }}
                     variants={sectionVariants}
                 >
-                    <h2 className="text-2xl md:text-3xl font-semibold mb-6 text-center text-gray-800 dark:text-white">Naše priestory</h2>
+                    <h2 className="text-2xl md:text-3xl font-semibold mb-6 text-center text-primary/90">Naše priestory</h2>
                     {/* Použitie Shadcn Carousel komponentu */}
                     <Carousel 
                         opts={{ align: "start", loop: true }} 
@@ -223,7 +223,7 @@ export default function PenzionPage() {
                     viewport={{ once: true, amount: 0.3 }}
                     variants={sectionVariants}
                 >
-                    <h2 className="text-2xl md:text-3xl font-semibold mb-8 text-center text-gray-800 dark:text-white">Čo u nás nájdete</h2>
+                    <h2 className="text-2xl md:text-3xl font-semibold mb-8 text-center text-primary/90">Čo u nás nájdete</h2>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-6 md:gap-8 max-w-4xl mx-auto">
                         {amenities.map((item, index) => (
                             <div key={index} className="flex flex-col items-center text-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-card dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow duration-300">
@@ -242,7 +242,7 @@ export default function PenzionPage() {
                     viewport={{ once: true, amount: 0.3 }}
                     variants={sectionVariants}
                 >
-                    <h2 className="text-2xl md:text-3xl font-semibold mb-8 text-center text-gray-800 dark:text-white">Čo hovoria naši hostia</h2>
+                    <h2 className="text-2xl md:text-3xl font-semibold mb-8 text-center text-primary/90">Čo hovoria naši hostia</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
                         <blockquote className="border-l-4 border-putec-primary pl-6 italic text-gray-700 dark:text-gray-300">
                             <p className="mb-2">"Úžasné miesto na oddych v srdci Malých Karpát. Krásne prostredie, výborné víno a veľmi milí majitelia. Určite odporúčame!"</p>
@@ -303,7 +303,7 @@ export default function PenzionPage() {
                 >
                     <Card className="shadow-lg">
                         <CardHeader className="text-center">
-                            <CardTitle className="text-2xl md:text-3xl font-semibold text-gray-800 dark:text-white">Rezervujte si pobyt</CardTitle>
+                            <CardTitle className="text-2xl md:text-3xl font-semibold text-primary/90">Rezervujte si pobyt</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <p className="text-center text-muted-foreground mb-6">
@@ -335,23 +335,23 @@ export default function PenzionPage() {
                     viewport={{ once: true, amount: 0.3 }}
                     variants={sectionVariants}
                 >
-                    <h2 className="text-2xl md:text-3xl font-semibold mb-8 text-center text-gray-800 dark:text-white">Máte otázky? Kontaktujte nás</h2>
+                    <h2 className="text-2xl md:text-3xl font-semibold mb-8 text-center text-primary/90">Máte otázky? Kontaktujte nás</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto text-center">
                         <div className="flex flex-col items-center">
                             <Phone className="h-7 w-7 text-putec-primary mb-3" />
-                            <h3 className="font-semibold mb-1 text-gray-800 dark:text-white">Telefón</h3>
+                            <h3 className="font-semibold mb-1 text-primary/80">Telefón</h3>
                             <a href="tel:+421900123456" className="text-putec-primary hover:underline">+421 900 123 456</a> 
                             {/* TODO: Nahradiť správnym číslom */} 
                         </div>
                         <div className="flex flex-col items-center">
                             <Mail className="h-7 w-7 text-putec-primary mb-3" />
-                            <h3 className="font-semibold mb-1 text-gray-800 dark:text-white">Email</h3>
+                            <h3 className="font-semibold mb-1 text-primary/80">Email</h3>
                             <a href="mailto:info@penzionputec.sk" className="text-putec-primary hover:underline">info@penzionputec.sk</a>
                             {/* TODO: Nahradiť správnym emailom */}
                         </div>
                         <div className="flex flex-col items-center">
                             <AddressPin className="h-7 w-7 text-putec-primary mb-3" /> 
-                            <h3 className="font-semibold mb-1 text-gray-800 dark:text-white">Adresa</h3>
+                            <h3 className="font-semibold mb-1 text-primary/80">Adresa</h3>
                             {/* Zmena farby textu adresy */}
                             <p className="text-putec-primary dark:text-putec-primary">Pezinská 615/103</p>
                             <p className="text-putec-primary dark:text-putec-primary">902 01 Vinosady</p>

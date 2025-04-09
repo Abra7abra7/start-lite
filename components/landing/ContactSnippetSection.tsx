@@ -13,18 +13,18 @@ export const ContactSnippetSection = () => {
                 <div className="max-w-3xl mx-auto text-muted-foreground grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
                     <div className="flex flex-col items-center">
                         <MapPin className="h-8 w-8 mb-2 text-primary"/>
-                        <h3 className="font-semibold mb-1">Adresa</h3>
-                        <p>Vinárska 123</p>
+                        <h3 className="font-semibold mb-1">Adresa:</h3>
+                        <p>Putec s.r.o., Pezinská 154</p>
                         <p>902 01 Vinosady</p> 
                     </div>
                      <div className="flex flex-col items-center">
                         <Phone className="h-8 w-8 mb-2 text-primary"/>
-                        <h3 className="font-semibold mb-1">Telefón</h3>
-                        <a href="tel:+4219XXXXXXXX" className="hover:text-primary">+421 9XX XXX XXX</a>
+                        <h3 className="font-semibold mb-1">Telefón:</h3>
+                        <a href="tel:+421903123456" className="hover:text-primary">+421 902 144 074​</a>
                     </div>
                      <div className="flex flex-col items-center">
                         <Mail className="h-8 w-8 mb-2 text-primary"/>
-                        <h3 className="font-semibold mb-1">Email</h3>
+                        <h3 className="font-semibold mb-1">Email:</h3>
                         <a href="mailto:info@vinoputec.sk" className="hover:text-primary">info@vinoputec.sk</a>
                     </div>
                 </div>
