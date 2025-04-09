@@ -7,11 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion } from 'framer-motion'; // Import pre animácie
 import { Button } from "@/components/ui/button" // Import Button komponentu
 // Import ikon pre vybavenie
-import { Wifi, ParkingCircle, Bath, AirVent, Wine, Wind } from 'lucide-react';
+import { Wifi, ParkingCircle, BathIcon, AirVent, Wine, Wind } from 'lucide-react';
 // Import ikon pre okolie
 import { Bike, MountainSnow, Castle, MapPin } from 'lucide-react'; 
 // Import ikon pre typy izieb a vybavenie
-import { BedDouble, BedSingle, Users, Bath as BathIcon, CookingPot } from 'lucide-react';
+import { BedDouble, BedSingle, Users, CookingPot } from 'lucide-react';
 // Import Carousel komponentov
 import {
     Carousel,
@@ -245,11 +245,11 @@ export default function PenzionPage() {
                     <h2 className="text-2xl md:text-3xl font-semibold mb-8 text-center text-primary/90">Čo hovoria naši hostia</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
                         <blockquote className="border-l-4 border-putec-primary pl-6 italic text-gray-700 dark:text-gray-300">
-                            <p className="mb-2">"Úžasné miesto na oddych v srdci Malých Karpát. Krásne prostredie, výborné víno a veľmi milí majitelia. Určite odporúčame!"</p>
+                            <p className="mb-2">&quot;Úžasné miesto na oddych v srdci Malých Karpát. Krásne prostredie, výborné víno a veľmi milí majitelia. Určite odporúčame!&quot;</p>
                             <footer className="font-semibold text-sm text-gray-600 dark:text-gray-400">- Rodina Nováková</footer>
                         </blockquote>
                         <blockquote className="border-l-4 border-putec-primary pl-6 italic text-gray-700 dark:text-gray-300">
-                            <p className="mb-2">"Penzión Pútec je skvelá voľba pre všetkých, ktorí hľadajú pokoj a pohodu. Výborná poloha na výlety po okolí a možnosť ochutnať skvelé lokálne vína."</p>
+                            <p className="mb-2">&quot;Penzión Pútec je skvelá voľba pre všetkých, ktorí hľadajú pokoj a pohodu. Výborná poloha na výlety po okolí a možnosť ochutnať skvelé lokálne vína.&quot;</p>
                             <footer className="font-semibold text-sm text-gray-600 dark:text-gray-400">- Peter K.</footer>
                         </blockquote>
                         {/* Môžete pridať ďalšie referencie */}

@@ -1,6 +1,4 @@
 import React from 'react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -9,6 +7,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Mail, Phone } from 'lucide-react'; // Icons for contact
 
