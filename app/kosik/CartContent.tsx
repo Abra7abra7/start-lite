@@ -5,8 +5,7 @@ import { useCart } from '@/context/CartContext';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Trash2, AlertTriangle } from 'lucide-react';
+import { Trash2, AlertTriangle, Minus, Plus } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
 // Definícia komponentu presunutá sem
@@ -69,15 +68,30 @@ export default function CartContent() {
                                 </div>
 
                                 <div className="flex items-center gap-3 flex-shrink-0">
-                                    <label htmlFor={`quantity-${item.id}`} className="sr-only">Množstvo pre {item.name}</label>
-                                    <Input
-                                        id={`quantity-${item.id}`}
-                                        type="number"
-                                        min="1"
-                                        value={item.quantity}
-                                        onChange={(e) => updateQuantity(item.id, parseInt(e.target.value, 10) || 1)}
-                                        className="w-16 h-9 text-center rounded"
-                                    />
+                                    {/* Nový counter množstva */}
+                                    <div className="flex items-center border rounded-md">
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-9 w-9 rounded-r-none" 
+                                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                            disabled={item.quantity <= 1} 
+                                            aria-label={`Znížiť množstvo ${item.name}`}
+                                        >
+                                            <Minus size={16} />
+                                        </Button>
+                                        <span className="px-3 text-sm font-medium w-10 text-center tabular-nums" aria-live="polite">{item.quantity}</span>
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-9 w-9 rounded-l-none" 
+                                            onClick={() => updateQuantity(item.id, item.quantity + 1)} 
+                                            // Prípadná logika pre disabled na základe max. skladu, ak by sme ju mali k dispozícii
+                                            aria-label={`Zvýšiť množstvo ${item.name}`}
+                                        >
+                                            <Plus size={16} />
+                                        </Button>
+                                    </div>
                                     <Button
                                         variant="outline"
                                         size="icon"
