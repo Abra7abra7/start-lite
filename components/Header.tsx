@@ -143,16 +143,16 @@ export function Header() {
                                         <ListItem href="/produkty" title="Všetky vína">
                                             Zobraziť celú ponuku.
                                         </ListItem>
-                                        <ListItem href="/produkty?category=biele" title="Biele vína">
+                                        <ListItem href="/produkty?category=Biele víno" title="Biele vína">
                                             Svieže a elegantné.
                                         </ListItem>
-                                        <ListItem href="/produkty?category=cervene" title="Červené vína">
+                                        <ListItem href="/produkty?category=Červené víno" title="Červené vína">
                                             Plné a zamatové.
                                         </ListItem>
-                                        <ListItem href="/produkty?category=ruzove" title="Ružové vína">
+                                        <ListItem href="/produkty?category=Ružové víno" title="Ružové vína">
                                             Ľahké a ovocné.
                                         </ListItem>
-                                        <ListItem href="/produkty?category=sumive" title="Šumivé vína">
+                                        <ListItem href="/produkty?category=Šumivé víno" title="Šumivé vína">
                                             Oslavné bublinky.
                                         </ListItem>
                                     </ul>
@@ -244,22 +244,22 @@ export function Header() {
                                         </Link>
                                     </SheetClose>
                                     <SheetClose asChild>
-                                        <Link href="/produkty?category=biele" className="pl-4 text-muted-foreground hover:text-foreground text-sm">
+                                        <Link href="/produkty?category=Biele víno" className="pl-4 text-muted-foreground hover:text-foreground text-sm">
                                             › Biele vína
                                         </Link>
                                     </SheetClose>
                                     <SheetClose asChild>
-                                        <Link href="/produkty?category=cervene" className="pl-4 text-muted-foreground hover:text-foreground text-sm">
+                                        <Link href="/produkty?category=Červené víno" className="pl-4 text-muted-foreground hover:text-foreground text-sm">
                                             › Červené vína
                                         </Link>
                                     </SheetClose>
                                     <SheetClose asChild>
-                                        <Link href="/produkty?category=ruzove" className="pl-4 text-muted-foreground hover:text-foreground text-sm">
+                                        <Link href="/produkty?category=Ružové víno" className="pl-4 text-muted-foreground hover:text-foreground text-sm">
                                             › Ružové vína
                                         </Link>
                                     </SheetClose>
                                     <SheetClose asChild>
-                                        <Link href="/produkty?category=sumive" className="pl-4 text-muted-foreground hover:text-foreground text-sm">
+                                        <Link href="/produkty?category=Šumivé víno" className="pl-4 text-muted-foreground hover:text-foreground text-sm">
                                             › Šumivé vína
                                         </Link>
                                     </SheetClose>

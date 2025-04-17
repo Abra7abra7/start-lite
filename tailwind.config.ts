@@ -69,7 +69,7 @@ const config: Config = {
 				sm: 'calc(var(--radius) - 4px)'
 			},
 			backgroundImage: {
-                'hero-pattern': "url('https://jfmssfymrewzbnsbynxd.supabase.co/storage/v1/object/public/product-images/public/foto%20web/hero%20(2).webp')",
+                'hero-pattern': "url('/Titulná fotka-min.jpg')",
             },
 			keyframes: {
 				'accordion-down': {

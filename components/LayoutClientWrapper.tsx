@@ -1,9 +1,15 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
-import { Toaster as SonnerToaster } from '@/components/ui/sonner';
+
+// Dynamický import pre SonnerToaster
+const SonnerToaster = dynamic(
+  () => import('@/components/ui/sonner').then((mod) => mod.Toaster),
+  { ssr: false } // Toaster nemá zmysel renderovať na serveri
+);
 
 export function LayoutClientWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -19,7 +25,7 @@ export function LayoutClientWrapper({ children }: { children: React.ReactNode })
         </main>
         {showHeaderFooter && <Footer />}
       </div>
-      <SonnerToaster richColors position="top-right" />
+      <SonnerToaster richColors position="top-right" /> {/* Použitie dynamicky importovaného komponentu */}
     </>
   );
 }
