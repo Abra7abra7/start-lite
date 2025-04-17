@@ -8,6 +8,13 @@ import { BedDouble, Wifi, ParkingCircle, UtensilsCrossed, CalendarDays, Mail, Ph
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTrigger, DialogClose } from '@/components/ui/dialog'; // Import Dialog komponentov
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'; // Import Accordion
+import {
+    Carousel,
+    CarouselContent,
+    CarouselItem,
+    CarouselNext,
+    CarouselPrevious,
+} from "@/components/ui/carousel"
 
 // Zoznam obrázkov pre galériu
 const galleryImages = [
@@ -182,7 +189,39 @@ export default function PenzionPageClient() {
             {/* Sekcia: Fotogaléria */}
             <section className="mb-16">
                 <h2 className="text-2xl md:text-3xl font-semibold text-center mb-8 text-gray-800 dark:text-gray-200">Fotogaléria</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                <div className="lg:hidden mb-12">
+                    <Carousel
+                        opts={{
+                            align: "start",
+                            loop: true,
+                        }}
+                        className="w-full max-w-xl mx-auto" // Centrovanie a obmedzenie šírky
+                    >
+                        <CarouselContent>
+                            {galleryImages.map((image, index) => (
+                                <CarouselItem key={index}>
+                                    <div className="p-1"> {/* Malý padding okolo itemu */}
+                                        <Card className="overflow-hidden">
+                                            <CardContent className="flex aspect-square items-center justify-center p-0"> {/* aspect-square a p-0 */}
+                                                <Image
+                                                    src={image.src}
+                                                    alt={image.alt}
+                                                    width={500} // Šírka pre lepšie načítanie
+                                                    height={500} // Výška
+                                                    className="object-cover w-full h-full transition-transform duration-300 ease-in-out group-hover:scale-105"
+                                                    priority={index < 2} // Priorita pre prvé obrázky
+                                                />
+                                            </CardContent>
+                                        </Card>
+                                    </div>
+                                </CarouselItem>
+                            ))}
+                        </CarouselContent>
+                        <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 z-10" /> {/* Posunutie šípok */} 
+                        <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 z-10" />
+                    </Carousel>
+                </div>
+                <div className="hidden lg:grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
                     {galleryImages.map((image, index) => (
                         <Dialog key={index}>
                             <DialogTrigger asChild>

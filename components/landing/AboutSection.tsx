@@ -13,7 +13,7 @@ export const AboutSection = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                     {/* Textová časť */}
                     <div>
-                        <h2 id="about-title" className="text-3xl md:text-4xl font-bold mb-4 text-primary">
+                        <h2 id="about-title" className="text-3xl md:text-4xl font-bold mb-4">
                             Rodinná Tradícia z Vinosadov
                         </h2>
                         <p className="text-muted-foreground mb-6">
