@@ -68,6 +68,15 @@ export default function RootLayout({
 
   return (
     <html lang="sk">
+      <head>
+        {/* Preload hero image for LCP optimization */}
+        <link 
+          rel="preload" 
+          href="https://jfmssfymrewzbnsbynxd.supabase.co/storage/v1/object/public/product-images/public/foto%20web/hero%20(2).webp" 
+          as="image" 
+          fetchPriority="high"
+        />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <CartProvider>
           {/* Použitie klientského wrapperu na obaľovanie obsahu a zobrazenie Header/Footer/Toaster */}

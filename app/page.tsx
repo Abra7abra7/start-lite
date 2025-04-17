@@ -1,10 +1,20 @@
 // Nepoužívame "use server" pre túto stránku, bude statická
 
+import dynamic from 'next/dynamic';
+
 // Import nových sekcií
 import { HeroSection } from '@/components/landing/HeroSection';
-import { AboutSection } from '@/components/landing/AboutSection';
-import { ServicesSection } from '@/components/landing/ServicesSection';
-import { ContactSnippetSection } from '@/components/landing/ContactSnippetSection';
+
+// Dynamically import sections below the fold
+const AboutSection = dynamic(() => 
+  import('@/components/landing/AboutSection').then((mod) => mod.AboutSection)
+);
+const ServicesSection = dynamic(() => 
+  import('@/components/landing/ServicesSection').then((mod) => mod.ServicesSection)
+);
+const ContactSnippetSection = dynamic(() => 
+  import('@/components/landing/ContactSnippetSection').then((mod) => mod.ContactSnippetSection)
+);
 
 export default function Home() {
   return (
