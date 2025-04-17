@@ -34,13 +34,13 @@ export const HeroSection = () => {
     // URL adresa obrázka je teraz definovaná v tailwind.config.ts
     // const heroImageUrl = "https://jfmssfymrewzbnsbynxd.supabase.co/storage/v1/object/public/product-images/public/foto%20web/hero%20(2).webp"; 
 
-    // Definícia animácie
+    // Definícia animácie - optimalizované pre výkon
     const textVariants = {
         hidden: { opacity: 0, y: 20 },
         visible: { 
             opacity: 1, 
             y: 0,
-            transition: { duration: 0.6, ease: "easeOut" }
+            transition: { duration: 0.4, ease: "easeOut" }
         },
     };
 
@@ -48,8 +48,8 @@ export const HeroSection = () => {
         hidden: { },
         visible: {
             transition: {
-                staggerChildren: 0.15, // Oneskorenie medzi animáciami tlačidiel
-                delayChildren: 0.3, // Začiatok animácie tlačidiel po animácii textu
+                staggerChildren: 0.1, // Znížené oneskorenie pre lepší výkon
+                delayChildren: 0.2, // Znížené oneskorenie pre lepší výkon
             },
         },
     };
@@ -59,7 +59,7 @@ export const HeroSection = () => {
         visible: { 
             opacity: 1, 
             y: 0, 
-            transition: { duration: 0.5, ease: "easeOut" } 
+            transition: { duration: 0.3, ease: "easeOut" } 
         },
     };
 
@@ -71,11 +71,12 @@ export const HeroSection = () => {
 
     return (
         <section 
-            className="relative flex items-center justify-center h-[70vh] min-h-[500px] bg-cover bg-center bg-no-repeat text-white bg-hero-pattern" 
+            className="relative flex items-center justify-center h-[70vh] min-h-[500px] bg-cover bg-center bg-no-repeat text-white bg-hero-pattern will-change-transform" 
             aria-labelledby="hero-title"
+            style={{ contain: 'paint' }}
         >
-            {/* Overlay pre lepšiu čitateľnosť textu */}
-            <div className="absolute inset-0 bg-black/50 z-0"></div>
+            {/* Overlay pre lepšiu čitateľnosť textu - optimalizovaný pre výkon */}
+            <div className="absolute inset-0 bg-black/50 z-0 will-change-opacity" style={{ contain: 'strict' }}></div>
 
             {/* Kontajner pre obsah, aby bol nad overlayom */}
             <motion.div 

@@ -50,13 +50,22 @@ export default function RootLayout({
   return (
     <html lang="sk" className={`${geistSans.variable} ${geistMono.variable}`}>
       <head>
+        {/* DNS Preconnect pre externé domény */}
+        <link rel="preconnect" href="https://jfmssfymrewzbnsbynxd.supabase.co" crossOrigin="anonymous" />
+        
+        {/* Preload kritických zdrojov */}
         <link 
           rel="preload" 
-          href="/Titulná fotka (1).jpg" 
+          href="/hero-optimized.webp" 
           as="image" 
+          type="image/webp"
           fetchPriority="high"
         />
-        {/* Odstránené link tagy pre Google Fonts (Parkinsans) */}
+        <link rel="preload" href="./fonts/GeistVF.woff" as="font" type="font/woff2" crossOrigin="anonymous" />
+        
+        {/* Optimalizácia Core Web Vitals */}
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#DEB584" />
       </head>
       <body className={'antialiased'}> 
         <CartProvider>
