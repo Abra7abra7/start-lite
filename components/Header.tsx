@@ -95,7 +95,6 @@ export function Header() {
                         />
                         <span 
                             className="font-bold sm:inline-block" 
-                            style={{ fontFamily: 'Parkinsans, sans-serif' }}
                         >
                             Víno Pútec
                         </span>
@@ -122,7 +121,6 @@ export function Header() {
                     />
                     <span 
                         className="font-bold sm:inline-block" 
-                        style={{ fontFamily: 'Parkinsans, sans-serif' }}
                     >
                         Víno Pútec
                     </span>
@@ -232,7 +230,6 @@ export function Header() {
                                             />
                                             <span 
                                                 className="font-bold" 
-                                                style={{ fontFamily: 'Parkinsans, sans-serif' }}
                                             >
                                                 Víno Pútec
                                             </span>

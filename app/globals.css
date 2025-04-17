@@ -29,7 +29,7 @@
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
     --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
+    --muted-foreground: 240 3.8% 35%; /* Upravené L z 46.1% na 35% pre lepší kontrast */
     
     /* Pútec Accent Color (same as primary for simplicity) */
     --accent: 35 56% 70%; /* #DEB584 */

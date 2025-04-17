@@ -1,6 +1,6 @@
-import type { Metadata } from 'next';
+import { Metadata } from 'next';
 import localFont from 'next/font/local';
-import { CartProvider } from "@/components/CartProvider";
+import { CartProvider } from '@/components/CartProvider';
 import { LayoutClientWrapper } from '@/components/LayoutClientWrapper'; 
 import './globals.css'
 
@@ -48,7 +48,7 @@ export default function RootLayout({
 }>) {
 
   return (
-    <html lang="sk">
+    <html lang="sk" className={`${geistSans.variable} ${geistMono.variable}`}>
       <head>
         <link 
           rel="preload" 
@@ -56,23 +56,9 @@ export default function RootLayout({
           as="image" 
           fetchPriority="high"
         />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link 
-          rel="stylesheet" 
-          href="https://fonts.googleapis.com/css2?family=Parkinsans:wght@300..800&display=swap" 
-          media="print" 
-          // @ts-expect-error - onLoad nie je štandardný React prop pre link, ale funguje
-          onLoad="this.media='all'"
-        />
-        <noscript>
-          <link 
-            rel="stylesheet" 
-            href="https://fonts.googleapis.com/css2?family=Parkinsans:wght@300..800&display=swap" 
-          />
-        </noscript>
+        {/* Odstránené link tagy pre Google Fonts (Parkinsans) */}
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={'antialiased'}> 
         <CartProvider>
           <LayoutClientWrapper>{children}</LayoutClientWrapper>
         </CartProvider>
