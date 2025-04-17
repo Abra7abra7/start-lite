@@ -4,6 +4,18 @@ import { Button } from "@/components/ui/button";
 import { SortDropdown } from '@/components/produkty/SortDropdown'; // Import nového komponentu
 import { CategoryFilter } from '@/components/produkty/CategoryFilter'; // Import filtra kategórií
 import { ProductCard } from '@/components/produkty/ProductCard'; // Import nového komponentu karty
+import { Metadata } from 'next'; // Import Metadata type
+
+// Statické metadáta pre stránku so zoznamom produktov
+export const metadata: Metadata = {
+  title: 'Všetky vína | Pútec Vína',
+  description: 'Objavte našu kompletnú ponuku kvalitných slovenských vín z Vinosadov. Biele, červené, ružové a špeciálne vína priamo od vinára.',
+  // Môžeme pridať aj openGraph a twitter metadáta špecifické pre túto stránku, ak je to potrebné
+  // openGraph: {
+  //   title: 'Všetky vína | Pútec Vína',
+  //   description: 'Kompletná ponuka vín Pútec.',
+  // },
+};
 
 // Opt out of caching for this page, server-side render always
 export const dynamic = "force-dynamic";

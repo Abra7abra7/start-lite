@@ -1,4 +1,11 @@
 import React from 'react';
+import { Metadata } from 'next';
+
+// Metadáta pre stránku Obchodné podmienky
+export const metadata: Metadata = {
+  title: 'Obchodné Podmienky | Víno Pútec Vinosady',
+  description: 'Prečítajte si aktuálne obchodné podmienky platné pre nákup v e-shope vinárstva Víno Pútec. Informácie o objednávaní, platbe, doprave a reklamáciách.',
+};
 
 export default function ObchodnePodmienkyPage() {
   return (
