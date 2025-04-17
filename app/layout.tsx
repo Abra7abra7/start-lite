@@ -52,7 +52,7 @@ export default function RootLayout({
       <head>
         <link 
           rel="preload" 
-          href="/Titulná fotka-min.jpg" 
+          href="/Titulná fotka (1).jpg" 
           as="image" 
           fetchPriority="high"
         />

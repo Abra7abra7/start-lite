@@ -93,7 +93,10 @@ export function Header() {
                             height={32}
                             className="h-8 w-8" 
                         />
-                        <span className="font-bold sm:inline-block">
+                        <span 
+                            className="font-bold sm:inline-block" 
+                            style={{ fontFamily: 'Parkinsans, sans-serif' }}
+                        >
                             Víno Pútec
                         </span>
                     </Link>
@@ -117,7 +120,10 @@ export function Header() {
                         height={32}
                         className="h-8 w-8" 
                     />
-                    <span className="font-bold sm:inline-block">
+                    <span 
+                        className="font-bold sm:inline-block" 
+                        style={{ fontFamily: 'Parkinsans, sans-serif' }}
+                    >
                         Víno Pútec
                     </span>
                 </Link>
@@ -224,7 +230,12 @@ export function Header() {
                                                 height={24}
                                                 className="h-6 w-6" 
                                             />
-                                            <span className="font-bold">Víno Pútec</span>
+                                            <span 
+                                                className="font-bold" 
+                                                style={{ fontFamily: 'Parkinsans, sans-serif' }}
+                                            >
+                                                Víno Pútec
+                                            </span>
                                         </Link>
                                     </SheetTitle>
                                 </SheetHeader>

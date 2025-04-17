@@ -69,7 +69,7 @@ const config: Config = {
 				sm: 'calc(var(--radius) - 4px)'
 			},
 			backgroundImage: {
-                'hero-pattern': "url('/Titulná fotka-min.jpg')",
+                'hero-pattern': "url('/Titulná fotka (1).jpg')",
             },
 			keyframes: {
 				'accordion-down': {
