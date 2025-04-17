@@ -53,19 +53,37 @@ export default function RootLayout({
         {/* DNS Preconnect pre externé domény */}
         <link rel="preconnect" href="https://jfmssfymrewzbnsbynxd.supabase.co" crossOrigin="anonymous" />
         
-        {/* Preload kritických zdrojov */}
+        {/* Preload kritických zdrojov s prioritou */}
+        <link 
+          rel="preload" 
+          href="/hero-mobile.webp" 
+          as="image" 
+          type="image/webp"
+          fetchPriority="high"
+          media="(max-width: 767px)"
+        />
         <link 
           rel="preload" 
           href="/hero-optimized.webp" 
           as="image" 
           type="image/webp"
           fetchPriority="high"
+          media="(min-width: 768px)"
         />
         <link rel="preload" href="./fonts/GeistVF.woff" as="font" type="font/woff2" crossOrigin="anonymous" />
         
         {/* Optimalizácia Core Web Vitals */}
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#DEB584" />
+        <meta httpEquiv="Cache-Control" content="public, max-age=31536000" />
+
+        {/* Prioritizácia LCP */}
+        <style dangerouslySetInnerHTML={{ __html: `
+          .critical-hero {
+            content-visibility: auto;
+            contain-intrinsic-size: auto 500px;
+          }
+        `}} />
       </head>
       <body className={'antialiased'}> 
         <CartProvider>

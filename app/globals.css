@@ -7,6 +7,35 @@
   font-family: Parkinsans, sans-serif;
 } */
 
+/* Performance optimizations */
+.hero-section-image {
+  content-visibility: auto;
+  contain-intrinsic-size: 100vw 70vh;
+}
+
+/* Image fadein optimizations */
+.hero-image {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  will-change: transform;
+  transition: opacity 0.2s;
+  contain: layout paint;
+}
+
+/* Layout optimizations */
+.optimize-paint {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Prioritize LCP element */
+.lcp-priority {
+  content-visibility: auto;
+  contain-intrinsic-size: auto;
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;

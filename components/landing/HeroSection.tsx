@@ -34,13 +34,13 @@ export const HeroSection = () => {
     // URL adresa obrázka je teraz definovaná v tailwind.config.ts
     // const heroImageUrl = "https://jfmssfymrewzbnsbynxd.supabase.co/storage/v1/object/public/product-images/public/foto%20web/hero%20(2).webp"; 
 
-    // Definícia animácie - optimalizované pre výkon
+    // Definícia animácie - extrémne optimalizované pre výkon
     const textVariants = {
-        hidden: { opacity: 0, y: 20 },
+        hidden: { opacity: 0, y: 10 },
         visible: { 
             opacity: 1, 
             y: 0,
-            transition: { duration: 0.4, ease: "easeOut" }
+            transition: { duration: 0.2, ease: "easeOut" }
         },
     };
 
@@ -48,59 +48,72 @@ export const HeroSection = () => {
         hidden: { },
         visible: {
             transition: {
-                staggerChildren: 0.1, // Znížené oneskorenie pre lepší výkon
-                delayChildren: 0.2, // Znížené oneskorenie pre lepší výkon
+                staggerChildren: 0.05, // Minimálne oneskorenie pre extrémny výkon
+                delayChildren: 0.1, // Minimálne oneskorenie pre extrémny výkon
             },
         },
     };
 
     const buttonVariants = {
-        hidden: { opacity: 0, y: 20 },
+        hidden: { opacity: 0, y: 10 },
         visible: { 
             opacity: 1, 
             y: 0, 
-            transition: { duration: 0.3, ease: "easeOut" } 
+            transition: { duration: 0.2, ease: "easeOut" } 
         },
     };
 
-    // Podmienené definovanie animačných props
-    const containerAnimationProps = !isMobile ? { initial: "hidden", animate: "visible", variants: { visible: { transition: { staggerChildren: 0.2 } } } } : {};
-    const textAnimationProps = !isMobile ? { variants: textVariants } : {};
-    const buttonContainerAnimationProps = !isMobile ? { variants: buttonContainerVariants } : {};
-    const buttonAnimationProps = !isMobile ? { variants: buttonVariants } : {};
+    // Úplné vypnutie animácií na mobilných zariadeniach a podmienené definovanie animačných props
+    // Redukované animácie pre všetky zariadenia kvôli výkonu
+    const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+    
+    useEffect(() => {
+        // Kontrola, či užívateľ preferuje zníženú animáciu - len na klientskej strane
+        setPrefersReducedMotion(
+            typeof window !== 'undefined' && 
+            window.matchMedia && 
+            window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        );
+    }, []);
+    
+    const useAnimations = !isMobile && !prefersReducedMotion;
+    const containerAnimationProps = useAnimations ? { initial: "hidden", animate: "visible", variants: { visible: { transition: { staggerChildren: 0.1 } } } } : {};
+    const textAnimationProps = useAnimations ? { variants: textVariants } : {};
+    const buttonContainerAnimationProps = useAnimations ? { variants: buttonContainerVariants } : {};
+    const buttonAnimationProps = useAnimations ? { variants: buttonVariants } : {};
 
     return (
         <section 
-            className="relative flex items-center justify-center h-[70vh] min-h-[500px] bg-cover bg-center bg-no-repeat text-white bg-hero-pattern will-change-transform" 
+            className="hero-section-image lcp-priority critical-hero relative flex items-center justify-center h-[70vh] min-h-[500px] bg-cover bg-center bg-no-repeat text-white bg-hero-pattern md:bg-hero-pattern-desktop" 
             aria-labelledby="hero-title"
-            style={{ contain: 'paint' }}
+            data-priority="true"
         >
-            {/* Overlay pre lepšiu čitateľnosť textu - optimalizovaný pre výkon */}
-            <div className="absolute inset-0 bg-black/50 z-0 will-change-opacity" style={{ contain: 'strict' }}></div>
+            {/* Overlay pre lepšiu čitateľnosť textu - extrémne optimalizovaný pre výkon */}
+            <div className="absolute inset-0 bg-black/50 z-0 hero-image" data-priority="high"></div>
 
             {/* Kontajner pre obsah, aby bol nad overlayom */}
             <motion.div 
-                className="relative z-10 container mx-auto px-4 text-center"
+                className="relative z-10 container mx-auto px-4 text-center optimize-paint"
                 // Aplikujeme podmienené props
                 {...containerAnimationProps}
             >
                 <motion.h1 
                     id="hero-title" 
-                    className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg"
+                    className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg optimize-paint"
                     // Aplikujeme podmienené props
                     {...textAnimationProps}
                 >
                     Rodinné Vína Pútec
                 </motion.h1>
                 <motion.p 
-                    className="text-lg md:text-xl mb-8 max-w-2xl mx-auto drop-shadow-md"
+                    className="text-lg md:text-xl mb-8 max-w-2xl mx-auto drop-shadow-md optimize-paint"
                     // Aplikujeme podmienené props
                     {...textAnimationProps}
                 >
                     Objavte poctivé vína z Malých Karpát, rezervujte si pobyt v našom penzióne alebo zažite nezabudnuteľnú degustáciu.
                 </motion.p>
                 <motion.div 
-                    className="flex flex-col sm:flex-row gap-4 justify-center"
+                    className="flex flex-col sm:flex-row gap-4 justify-center optimize-paint"
                     // Aplikujeme podmienené props
                     {...buttonContainerAnimationProps}
                 >

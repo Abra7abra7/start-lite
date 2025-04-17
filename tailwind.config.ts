@@ -69,7 +69,8 @@ const config: Config = {
 				sm: 'calc(var(--radius) - 4px)'
 			},
 			backgroundImage: {
-                'hero-pattern': "url('/hero-optimized.webp')",
+                'hero-pattern': "url('/hero-mobile.webp')",
+                'hero-pattern-desktop': "url('/hero-optimized.webp')",
             },
 			keyframes: {
 				'accordion-down': {
