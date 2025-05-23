@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import localFont from 'next/font/local';
+import { Inter, Montserrat } from 'next/font/google';
 import { CartProvider } from '@/components/CartProvider';
 import { LayoutClientWrapper } from '@/components/LayoutClientWrapper'; 
 import './globals.css'
@@ -15,6 +16,20 @@ const geistMono = localFont({
   variable: '--font-geist-mono',
   weight: '100 900',
 })
+
+// Nové Google fonty
+const inter = Inter({
+  subsets: ['latin', 'latin-ext'], // Pridané latin-ext pre slovenské znaky
+  variable: '--font-inter',
+  display: 'swap', // Zabezpečí rýchle zobrazenie textu
+});
+
+const montserrat = Montserrat({
+  subsets: ['latin', 'latin-ext'], // Pridané latin-ext
+  variable: '--font-montserrat',
+  weight: ['400', '700'], // Príklad váh, môžeme upraviť
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.vinoputec.sk'), 
@@ -48,7 +63,7 @@ export default function RootLayout({
 }>) {
 
   return (
-    <html lang="sk" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="sk" className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${montserrat.variable}`}>
       <head>
         {/* DNS Preconnect pre externé domény */}
         <link rel="preconnect" href="https://jfmssfymrewzbnsbynxd.supabase.co" crossOrigin="anonymous" />

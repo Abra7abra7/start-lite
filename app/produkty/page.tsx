@@ -84,7 +84,7 @@ export default async function ProduktyPage({ searchParams }: ProduktyPageProps) 
       <div className="container mx-auto py-8 px-4">
         {/* Zobrazenie hlavičky a filtrov aj keď nie sú produkty */}
         <div className="w-full flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Naše Produkty {categoryParam ? `(${categoryParam})` : ''}</h1>
+          <h1 className="text-3xl md:text-4xl font-heading font-bold">Naše Produkty {categoryParam ? `(${categoryParam})` : ''}</h1>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600">Zoradiť podľa:</span>
@@ -108,7 +108,7 @@ export default async function ProduktyPage({ searchParams }: ProduktyPageProps) 
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="w-full flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4">
-        <h1 className="text-2xl font-bold">Naše Produkty {categoryParam ? `(${categoryParam})` : ''}</h1>
+        <h1 className="text-3xl md:text-4xl font-heading font-bold">Naše Produkty {categoryParam ? `(${categoryParam})` : ''}</h1>
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-600">Zoradiť podľa:</span>

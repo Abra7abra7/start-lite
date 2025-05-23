@@ -7,7 +7,7 @@ export const ContactSnippetSection = () => {
     return (
         <section className="py-16 md:py-24 bg-background" aria-labelledby="contact-snippet-title">
             <div className="container mx-auto px-4 text-center">
-                <h2 id="contact-snippet-title" className="text-3xl md:text-4xl font-bold mb-8">
+                <h2 id="contact-snippet-title" className="text-3xl md:text-4xl font-heading font-bold mb-8">
                     Navštívte Nás
                 </h2>
                 <div className="max-w-3xl mx-auto text-muted-foreground grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">

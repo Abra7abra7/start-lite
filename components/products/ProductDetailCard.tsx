@@ -107,7 +107,7 @@ export function ProductDetailCard({ product }: ProductDetailCardProps) {
          )}
          
         {/* Názov produktu */}
-        <h1 className="text-3xl lg:text-4xl font-bold mb-3">{product.name}</h1>
+        <h1 className="text-3xl lg:text-4xl font-heading font-bold mb-3">{product.name}</h1>
 
         {/* Cena a Sklad */}
         <div className="mb-6 flex items-baseline gap-4">

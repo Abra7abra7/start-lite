@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 export default function KontaktPageClient() {
   return (
     <div className="container mx-auto px-4 py-12 md:py-16">
-      <h1 className="text-3xl md:text-4xl font-bold text-center mb-10 md:mb-14 text-gray-900 dark:text-gray-100">Kontaktujte Nás</h1>
+      <h1 className="text-3xl md:text-4xl font-heading font-bold text-center mb-10 md:mb-14 text-gray-900 dark:text-gray-100">Kontaktujte Nás</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-12">
         {/* Kontaktné informácie */}

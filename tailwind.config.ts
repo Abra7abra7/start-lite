@@ -94,6 +94,11 @@ const config: Config = {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out'
 			},
+			fontFamily: {
+				sans: ['var(--font-inter)', 'var(--font-geist-sans)', 'sans-serif'],
+				heading: ['var(--font-montserrat)', 'var(--font-geist-sans)', 'sans-serif'],
+				mono: ['var(--font-geist-mono)', 'monospace']
+			},
 		}
 	},
 	plugins: [

@@ -99,7 +99,7 @@ export const HeroSection = () => {
             >
                 <motion.h1 
                     id="hero-title" 
-                    className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg optimize-paint"
+                    className="text-4xl md:text-6xl font-heading font-bold mb-4 drop-shadow-lg optimize-paint"
                     // Aplikujeme podmienené props
                     {...textAnimationProps}
                 >

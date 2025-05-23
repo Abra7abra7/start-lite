@@ -18,7 +18,7 @@ export default async function ProductDetailPage({ params }: { params: { productI
     console.error("Error fetching product:", error.message);
     return (
         <div className="container mx-auto px-4 py-8">
-            <h1 className="text-2xl font-bold text-red-600">Chyba pri načítaní produktu</h1>
+            <h1 className="text-3xl md:text-4xl font-heading font-bold text-red-600">Chyba pri načítaní produktu</h1>
             <p>{error.message || 'Nastala neočakávaná chyba.'}</p>
         </div>
     );

@@ -49,7 +49,7 @@ export default function ThankYouContent() {
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
                     <CheckCircle2 className="h-10 w-10 text-green-600" />
                 </div>
-                <CardTitle className="text-3xl font-bold">Ďakujeme za Vašu objednávku!</CardTitle>
+                <CardTitle className="text-3xl md:text-4xl font-heading font-bold">Ďakujeme za Vašu objednávku!</CardTitle>
                 {orderId && !loading && orderDetails && (
                     <CardDescription className="text-lg pt-2">
                         Vaša objednávka č. <strong>{orderId}</strong> bola úspešne prijatá.

@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default function ObchodnePodmienkyPage() {
   return (
     <div className="container mx-auto py-12 px-4">
-      <h1 className="text-3xl md:text-4xl font-bold mb-8 text-center text-primary">Obchodné podmienky</h1>
+      <h1 className="text-3xl md:text-4xl font-heading font-bold mb-8 text-center text-primary">Obchodné podmienky</h1>
       <div className="prose max-w-none dark:prose-invert mx-auto">
         <h2 className="mt-8 mb-4 text-2xl font-semibold">1. Všeobecné ustanovenia</h2>
         <ol>

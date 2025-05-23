@@ -85,7 +85,7 @@ export default function PrihlaseniePage({ searchParams }: { searchParams: { mess
       </Link>
 
       <form className="flex-1 flex flex-col w-full justify-center gap-4 text-foreground">
-        <h1 className="text-2xl font-bold mb-4">Prihlásenie / Registrácia</h1>
+        <h1 className="text-3xl md:text-4xl font-heading font-bold mb-4">Prihlásenie / Registrácia</h1>
         <Label className="text-md" htmlFor="email">
           Email
         </Label>

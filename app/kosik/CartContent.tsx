@@ -26,7 +26,7 @@ export default function CartContent() {
     if (cartItems.length === 0 && !paymentCancelled) {
         return (
             <div className="container mx-auto py-12 px-4 text-center">
-                <h1 className="text-3xl font-bold mb-4">Váš Nákupný Košík</h1>
+                <h1 className="text-3xl md:text-4xl font-heading font-bold mb-4">Váš Nákupný Košík</h1>
                 <p className="text-xl text-gray-600 mb-6">Váš košík je prázdny.</p>
                 <Link href="/produkty">
                     <Button size="lg">Pokračovať v nákupe</Button>
@@ -37,7 +37,7 @@ export default function CartContent() {
 
     return (
          <div className="container mx-auto py-8 px-4">
-             <h1 className="text-3xl font-bold mb-6">Váš Nákupný Košík</h1>
+             <h1 className="text-3xl md:text-4xl font-heading font-bold mb-6">Váš Nákupný Košík</h1>
 
             {paymentCancelled && (
                 <div className="mb-6 flex items-center gap-3 rounded-lg border border-yellow-300 bg-yellow-50 p-4 text-yellow-800">
